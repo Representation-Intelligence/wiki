@@ -238,13 +238,13 @@ jobs:
       run: |
         echo "Creating the manifests..."
 
-        docker manifest create requarks/wiki:beta-$REL_VERSION_STRICT requarks/wiki:canary-$REL_VERSION_STRICT requarks/wiki:canary-arm64-$REL_VERSION_STRICT
-        docker manifest create ghcr.io/requarks/wiki:beta-$REL_VERSION_STRICT ghcr.io/requarks/wiki:canary-$REL_VERSION_STRICT ghcr.io/requarks/wiki:canary-arm64-$REL_VERSION_STRICT
+        docker manifest create ghcr.io/representation-intelligence/wiki:beta-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-arm64-$REL_VERSION_STRICT
+        docker manifest create ghcr.io/representation-intelligence/wiki:beta-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-arm64-$REL_VERSION_STRICT
 
         echo "Pushing the manifests..."
 
-        docker manifest push -p requarks/wiki:beta-$REL_VERSION_STRICT
-        docker manifest push -p ghcr.io/requarks/wiki:beta-$REL_VERSION_STRICT
+        docker manifest push -p ghcr.io/representation-intelligence/wiki:beta-$REL_VERSION_STRICT
+        docker manifest push -p ghcr.io/representation-intelligence/wiki:beta-$REL_VERSION_STRICT
 
   release:
     name: Publish Release Images
@@ -288,25 +288,25 @@ jobs:
         echo "Using major $MAJOR and minor $MINOR..."
         echo "Creating the manifests..."
 
-        docker manifest create requarks/wiki:$REL_VERSION_STRICT requarks/wiki:canary-$REL_VERSION_STRICT requarks/wiki:canary-arm64-$REL_VERSION_STRICT
-        docker manifest create requarks/wiki:$MAJOR requarks/wiki:canary-$REL_VERSION_STRICT requarks/wiki:canary-arm64-$REL_VERSION_STRICT
-        docker manifest create requarks/wiki:$MAJORMINOR requarks/wiki:canary-$REL_VERSION_STRICT requarks/wiki:canary-arm64-$REL_VERSION_STRICT
-        docker manifest create requarks/wiki:latest requarks/wiki:canary-$REL_VERSION_STRICT requarks/wiki:canary-arm64-$REL_VERSION_STRICT
-        docker manifest create ghcr.io/requarks/wiki:$REL_VERSION_STRICT ghcr.io/requarks/wiki:canary-$REL_VERSION_STRICT ghcr.io/requarks/wiki:canary-arm64-$REL_VERSION_STRICT
-        docker manifest create ghcr.io/requarks/wiki:$MAJOR ghcr.io/requarks/wiki:canary-$REL_VERSION_STRICT ghcr.io/requarks/wiki:canary-arm64-$REL_VERSION_STRICT
-        docker manifest create ghcr.io/requarks/wiki:$MAJORMINOR ghcr.io/requarks/wiki:canary-$REL_VERSION_STRICT ghcr.io/requarks/wiki:canary-arm64-$REL_VERSION_STRICT
-        docker manifest create ghcr.io/requarks/wiki:latest ghcr.io/requarks/wiki:canary-$REL_VERSION_STRICT ghcr.io/requarks/wiki:canary-arm64-$REL_VERSION_STRICT
+        docker manifest create ghcr.io/representation-intelligence/wiki:$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-arm64-$REL_VERSION_STRICT
+        docker manifest create ghcr.io/representation-intelligence/wiki:$MAJOR ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-arm64-$REL_VERSION_STRICT
+        docker manifest create ghcr.io/representation-intelligence/wiki:$MAJORMINOR ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-arm64-$REL_VERSION_STRICT
+        docker manifest create ghcr.io/representation-intelligence/wiki:latest ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-arm64-$REL_VERSION_STRICT
+        docker manifest create ghcr.io/representation-intelligence/wiki:$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-arm64-$REL_VERSION_STRICT
+        docker manifest create ghcr.io/representation-intelligence/wiki:$MAJOR ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-arm64-$REL_VERSION_STRICT
+        docker manifest create ghcr.io/representation-intelligence/wiki:$MAJORMINOR ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-arm64-$REL_VERSION_STRICT
+        docker manifest create ghcr.io/representation-intelligence/wiki:latest ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT ghcr.io/representation-intelligence/wiki:canary-arm64-$REL_VERSION_STRICT
 
         echo "Pushing the manifests..."
 
-        docker manifest push -p requarks/wiki:$REL_VERSION_STRICT
-        docker manifest push -p requarks/wiki:$MAJOR
-        docker manifest push -p requarks/wiki:$MAJORMINOR
-        docker manifest push -p requarks/wiki:latest
-        docker manifest push -p ghcr.io/requarks/wiki:$REL_VERSION_STRICT
-        docker manifest push -p ghcr.io/requarks/wiki:$MAJOR
-        docker manifest push -p ghcr.io/requarks/wiki:$MAJORMINOR
-        docker manifest push -p ghcr.io/requarks/wiki:latest
+        docker manifest push -p ghcr.io/representation-intelligence/wiki:$REL_VERSION_STRICT
+        docker manifest push -p ghcr.io/representation-intelligence/wiki:$MAJOR
+        docker manifest push -p ghcr.io/representation-intelligence/wiki:$MAJORMINOR
+        docker manifest push -p ghcr.io/representation-intelligence/wiki:latest
+        docker manifest push -p ghcr.io/representation-intelligence/wiki:$REL_VERSION_STRICT
+        docker manifest push -p ghcr.io/representation-intelligence/wiki:$MAJOR
+        docker manifest push -p ghcr.io/representation-intelligence/wiki:$MAJORMINOR
+        docker manifest push -p ghcr.io/representation-intelligence/wiki:latest
 
     - name: Download Linux Build
       uses: actions/download-artifact@v8
@@ -359,13 +359,13 @@ jobs:
         disable_web_page_preview: true
         message: |
           Wiki.js *${{ github.ref_name }}* has been released!
-          See [release notes](https://github.com/requarks/wiki/releases) for details.
+          See [release notes](https://github.com/ghcr.io/representation-intelligence/wiki/releases) for details.
 
     - name: Notify Discord Channel
       uses: sebastianpopp/discord-action@v2.0
       with:
         webhook: ${{ secrets.DISCORD_WEBHOOK }}
-        message: Wiki.js ${{ github.ref_name }} has been released! See https://github.com/requarks/wiki/releases for details.
+        message: Wiki.js ${{ github.ref_name }} has been released! See https://github.com/ghcr.io/representation-intelligence/wiki/releases for details.
 
   # build-do-image:
   #   name: Build DigitalOcean Image
