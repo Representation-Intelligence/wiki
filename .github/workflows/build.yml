@@ -138,6 +138,16 @@ jobs:
         dev/cypress/ci-setup.sh
         docker run --name cypress --network=host --ipc=host --shm-size 1G -v $GITHUB_WORKSPACE:/e2e -w /e2e cypress/included:4.9.0 --record false --headless --config baseUrl=http://localhost:3000
 
+    - name: Upload browser evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: browser-${{ matrix.dbtype }}
+        path: |
+          dev/cypress/screenshots
+          dev/cypress/videos
+        if-no-files-found: ignore
+
   arm:
     name: ARM Build
     runs-on: ubuntu-24.04-arm

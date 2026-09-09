@@ -8,6 +8,7 @@
     --ewo-ink: #182133;
     --ewo-muted: #5b657c;
     --ewo-primary: #d84a33;
+    --ewo-button: #c63e29;
     --ewo-link: #b53724;
     --ewo-on-primary: #fff;
     --ewo-line: rgba(87, 98, 125, .16);
@@ -24,6 +25,7 @@
       --ewo-ink: #f4f1f6;
       --ewo-muted: #a49ba6;
       --ewo-primary: #ff6a3d;
+      --ewo-button: #ff6a3d;
       --ewo-link: #ff8c6a;
       --ewo-on-primary: #100d10;
       --ewo-line: rgba(255, 238, 232, .1);
@@ -104,7 +106,7 @@
       h2 { margin-top: 2rem; }
     }
     .v-btn.primary:not(.v-btn--disabled) {
-      background: var(--ewo-primary) !important;
+      background: var(--ewo-button) !important;
       border-color: var(--ewo-primary) !important;
       color: var(--ewo-on-primary) !important;
     }
@@ -166,7 +168,7 @@
     .ewo-login .v-input .v-icon { color: var(--ewo-muted) !important; }
     .ewo-login .v-input--is-focused .v-input__slot { outline: 2px solid var(--ewo-link); outline-offset: 1px; }
     .ewo-login .login-form > .v-btn:not(.v-btn--disabled) {
-      background: var(--ewo-primary) !important;
+      background: var(--ewo-button) !important;
       color: var(--ewo-on-primary) !important;
       border-radius: 999px;
       box-shadow: none;
