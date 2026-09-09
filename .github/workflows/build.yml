@@ -57,13 +57,13 @@ jobs:
         file: dev/build/Dockerfile
         push: true
         tags: |
-          ghcr.io/${{ github.repository_owner }}/wiki:canary
-          ghcr.io/${{ github.repository_owner }}/wiki:canary-${{ env.REL_VERSION_STRICT }}
+          ghcr.io/representation-intelligence/wiki:canary
+          ghcr.io/representation-intelligence/wiki:canary-${{ env.REL_VERSION_STRICT }}
 
     - name: Extract compiled files
       run: |
         mkdir -p _dist
-        docker create --name wiki ghcr.io/${{ github.repository_owner }}/wiki:canary-$REL_VERSION_STRICT
+        docker create --name wiki ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT
         docker cp wiki:/wiki _dist
         docker rm wiki
         rm _dist/wiki/config.yml
@@ -162,7 +162,7 @@ jobs:
         provenance: false
         push: true
         tags: |
-          ghcr.io/${{ github.repository_owner }}/wiki:canary-arm64-${{ env.REL_VERSION_STRICT }}
+          ghcr.io/representation-intelligence/wiki:canary-arm64-${{ env.REL_VERSION_STRICT }}
 
   windows:
     name: Windows Build
