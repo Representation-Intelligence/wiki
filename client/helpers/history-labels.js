@@ -1,0 +1,42 @@
+export default {
+  zh: {
+    heading: '版本历史',
+    versions: '历史版本',
+    returnLive: '返回当前版本',
+    live: '当前版本',
+    editedBy: '编辑者',
+    lastEditedBy: '最后编辑',
+    createdBy: '创建者',
+    moved: '移动页面',
+    changedBy: '修改者',
+    source: '设为对比起点 A',
+    target: '设为对比终点 B',
+    viewSource: '查看源代码',
+    download: '下载此版本',
+    restore: '恢复此版本',
+    branch: '从此版本新建页面',
+    loadMore: '加载更多',
+    end: '已显示全部历史',
+    viewMode: '切换对比视图'
+  },
+  en: {
+    heading: 'Version history',
+    versions: 'Past versions',
+    returnLive: 'Return to live',
+    live: 'Live version',
+    editedBy: 'Edited by',
+    lastEditedBy: 'Last edited by',
+    createdBy: 'Created by',
+    moved: 'Moved',
+    changedBy: 'Changed by',
+    source: 'Compare from A',
+    target: 'Compare to B',
+    viewSource: 'View source',
+    download: 'Download version',
+    restore: 'Restore version',
+    branch: 'Create page from version',
+    loadMore: 'Load more',
+    end: 'End of history',
+    viewMode: 'Switch diff view'
+  }
+}

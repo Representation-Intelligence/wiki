@@ -20,8 +20,10 @@
     v-layout(row)
       v-flex(xs5, md4)
         v-toolbar.nav-header-inner(color='black', dark, flat, :class='$vuetify.rtl ? `pr-3` : `pl-3`')
-          v-avatar(tile, size='34', @click='goHome')
-            v-img.org-logo(:src='logoUrl')
+          a.ewo-home(href='/', :aria-label='title', @click.prevent='goHome')
+            img.ewo-header-wordmark(v-if='isEwoBrand', :src='brandLogoUrl', alt='ewo', width='92', height='32')
+            v-avatar(v-else, tile, size='34')
+              v-img.org-logo(:src='logoUrl', :alt='title', contain)
           //- v-menu(open-on-hover, offset-y, bottom, left, min-width='250', transition='slide-y-transition')
           //-   template(v-slot:activator='{ on }')
           //-     v-app-bar-nav-icon.btn-animate-app(v-on='on', :class='$vuetify.rtl ? `mx-0` : ``')
@@ -44,7 +46,7 @@
           //-         v-list-item-title.body-2.grey--text.text--ligten-2 {{$t('common:header.imagesFiles')}}
           //-         v-list-item-subtitle.overline.grey--text.text--lighten-2 Coming soon
           v-toolbar-title(:class='{ "mx-3": $vuetify.breakpoint.mdAndUp, "mx-1": $vuetify.breakpoint.smAndDown }')
-            span.subheading {{title}}
+            span.subheading {{brandTitle}}
       v-flex(md4, v-if='$vuetify.breakpoint.mdAndUp')
         v-toolbar.nav-header-inner(color='black', dark, flat)
           slot(name='mid')
@@ -298,6 +300,13 @@ export default {
     searchRestrictPath: sync('site/searchRestrictPath'),
     isLoading: get('isLoading'),
     title: get('site/title'),
+    isEwoBrand () { return this.logoUrl === '/_assets/brand/ewo-mark-light.svg' },
+    brandLogoUrl () { return `/_assets/brand/ewo-wordmark-${this.$vuetify.theme.dark ? 'dark' : 'light'}.svg` },
+    brandTitle () {
+      return this.isEwoBrand && this.title === 'ewo Wiki' ?
+        (siteConfig.lang.startsWith('zh') ? '知识库' : 'Wiki') :
+        this.title
+    },
     logoUrl: get('site/logoUrl'),
     path: get('page/path'),
     locale: get('page/locale'),

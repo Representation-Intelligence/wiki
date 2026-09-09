@@ -1,5 +1,13 @@
 // Visual reference: ai-habitat apps/site/src/user-console/user-console.css.
 // Screen-only layer preserves Wiki.js print output and application behavior.
+@font-face {
+  font-family: 'Alimama FangYuanTi VF';
+  src: url('~@/static/fonts/AlimamaFangYuanTiVF-Thin.woff2') format('woff2');
+  font-weight: 250 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @media screen {
   #root .v-application {
     --ewo-bg: #f3eee4;
@@ -15,7 +23,7 @@
     --ewo-shadow: 0 12px 32px rgba(125, 133, 154, .12);
     background: var(--ewo-bg);
     color: var(--ewo-ink);
-    font-family: 'PingFang SC', 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    font-family: 'Alimama FangYuanTi VF', 'PingFang SC', 'Segoe UI', 'Microsoft YaHei', sans-serif;
     -webkit-font-smoothing: antialiased;
 
     &.theme--dark {
@@ -133,6 +141,69 @@
       outline-offset: 3px;
     }
 
+    .onboarding, .notfound, .newpage, .unauthorized { background: var(--ewo-bg); color: var(--ewo-ink); min-height: 100dvh; height: auto; padding: 32px 20px; text-align: center; }
+    .onboarding::before, .notfound::before, .newpage::before, .unauthorized::before { display: none; }
+    .onboarding img, .notfound img, .newpage img, .unauthorized img { width: 142px; height: auto; filter: none; margin-bottom: 32px; }
+    .onboarding .subtitle-1, .notfound .subheading, .newpage .subtitle-1, .unauthorized .subtitle-1 { color: var(--ewo-muted); }
+    .onboarding .v-btn { text-transform: none; }
+    .ewo-home { display: flex; align-items: center; flex-shrink: 0; border-radius: 6px; }
+    .ewo-header-wordmark { display: block; object-fit: contain; }
+    .nav-header .v-toolbar__title { color: var(--ewo-muted); font-size: 17px; }
+    .nav-header .v-text-field input { color: var(--ewo-ink) !important; }
+    .v-list, .v-menu__content { background: var(--ewo-panel); color: var(--ewo-ink); }
+    .v-menu__content { border: 1px solid var(--ewo-line); border-radius: 12px; box-shadow: var(--ewo-shadow); }
+    .v-list-item__title, .v-list-item__subtitle { line-height: 1.6; }
+    .v-btn:focus-visible { outline: 2px solid var(--ewo-link); outline-offset: 3px; }
+    .v-footer .caption { color: var(--ewo-muted) !important; }
+    .v-footer a { color: var(--ewo-link); }
+
+    .ewo-contextbar {
+      background: var(--ewo-paper) !important;
+      color: var(--ewo-ink);
+      border-bottom: 1px solid var(--ewo-line);
+      height: auto !important;
+      .v-toolbar__content { min-height: 92px; height: auto !important; gap: 16px; padding: 20px 28px; }
+      h1 { font-size: 22px; font-weight: 400; line-height: 1.4; }
+      .ewo-contextbar-heading { min-width: 0; }
+      .ewo-contextbar-meta { color: var(--ewo-muted); font-size: 12px; display: flex; gap: 16px; margin-top: 6px; overflow-wrap: anywhere; }
+      .v-btn { flex-shrink: 0; text-transform: none; }
+    }
+    &.history {
+      .container { max-width: 1600px; padding: 28px; }
+      .ewo-trail-card { border: 1px solid var(--ewo-line); border-radius: 12px; background: var(--ewo-paper); }
+      .ewo-trail-row { padding: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+      .ewo-trail-row > .caption { flex-basis: 100%; color: var(--ewo-muted); overflow-wrap: anywhere; }
+      .ewo-trail-row .caption strong { color: var(--ewo-ink); }
+      .v-timeline::before { background: var(--ewo-line); }
+      .v-timeline-item__dot { box-shadow: none; background: var(--ewo-paper); }
+      .v-chip { background: var(--ewo-paper) !important; color: var(--ewo-muted) !important; }
+      .ewo-diff-selected:not(.v-btn--disabled) { background: var(--ewo-button); color: var(--ewo-on-primary); }
+      .ewo-diff-unselected { background: var(--ewo-bg); color: var(--ewo-muted); }
+      .ewo-diff-selected.v-btn--disabled { background: var(--ewo-line) !important; }
+      .ewo-diff-card { border: 1px solid var(--ewo-line); border-radius: 16px; overflow: hidden; }
+      .ewo-diff-heading { background: var(--ewo-paper); }
+      .ewo-diff-heading .row { flex-wrap: wrap; }
+      .ewo-diff-heading .subheading { color: var(--ewo-ink); overflow-wrap: anywhere; }
+      .ewo-diff-heading .v-btn { color: var(--ewo-muted) !important; text-transform: none; }
+      .ewo-diff-content { overflow-x: auto; color: var(--ewo-ink); }
+      .d2h-wrapper { color: var(--ewo-ink); }
+      .d2h-file-wrapper { border: 1px solid var(--ewo-line); border-radius: 8px; margin-bottom: 0; }
+      .d2h-code-linenumber, .d2h-code-side-linenumber { color: var(--ewo-muted); background: var(--ewo-paper); border-color: var(--ewo-line); }
+      .d2h-info { background: var(--ewo-paper); color: var(--ewo-muted); border-color: var(--ewo-line); }
+      .d2h-ins { background: #e6f4eb; border-color: #bddbc9; }
+      .d2h-del { background: #fbe9e5; border-color: #ebc5bc; }
+      .d2h-code-line del, .d2h-code-side-line del { background: #f3c8bf; }
+      .d2h-code-line ins, .d2h-code-side-line ins { background: #bfdfcd; }
+      .d2h-emptyplaceholder, .d2h-code-side-emptyplaceholder { background: var(--ewo-bg); border-color: var(--ewo-line); }
+      &.theme--dark {
+        .d2h-ins { background: #193b2c; border-color: #2a5941; }
+        .d2h-del { background: #482a2a; border-color: #694040; }
+        .d2h-code-line del, .d2h-code-side-line del { background: #733b3b; color: #fff; }
+        .d2h-code-line ins, .d2h-code-side-line ins { background: #2c6247; color: #fff; }
+      }
+    }
+    .history-promptmenu { border-top: 2px solid var(--ewo-primary); }
+
     .ewo-login {
       background: radial-gradient(ellipse at 20% 0, rgba(216, 74, 51, .1), transparent 60%), var(--ewo-bg) !important;
       min-height: 100vh;
@@ -146,7 +217,7 @@
       gap: 28px;
     }
     .ewo-login-heading { text-align: center; max-width: 460px; }
-    .ewo-wordmark { color: var(--ewo-primary); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -.06em; }
+    .ewo-wordmark { display: block; object-fit: contain; margin: 0 auto; }
     .ewo-login-heading h1 { font-size: 23px; font-weight: 500; line-height: 1.5; margin-top: 18px; }
     .ewo-login .login-sd {
       background: var(--ewo-paper);
@@ -198,13 +269,18 @@
     #root .v-application .nav-header {
       > .v-toolbar__content > .layout { margin: 0; min-width: 0; }
       .nav-header-inner .v-toolbar__content { padding: 0 !important; }
-      .flex.xs5 { flex-basis: 34%; max-width: 34%; }
-      .flex.xs7 { flex-basis: 66%; max-width: 66%; }
+      .flex.xs5 { flex-basis: 40%; max-width: 40%; }
+      .flex.xs7 { flex-basis: 60%; max-width: 60%; }
       .nav-header-inner.pr-4 { padding-right: 0 !important; }
       .v-toolbar__content { padding-left: 4px; padding-right: 4px; }
       .v-btn--icon { width: 36px; min-width: 36px; height: 48px !important; margin: 0 !important; }
-      .v-toolbar__title { font-size: 16px; }
+      .v-toolbar__title { font-size: 14px; }
+      .ewo-header-wordmark { width: 64px; height: 28px; }
     }
+    #root .v-application .ewo-contextbar .v-toolbar__content { padding: 16px; gap: 12px; flex-wrap: wrap; }
+    #root .v-application .ewo-contextbar h1 { font-size: 20px; }
+    #root .v-application.history .container { padding: 16px; }
+    #root .v-application.history .ewo-diff-card > .v-card__text { padding: 12px; }
     #root .v-application .ewo-login { padding: 28px 16px; justify-content: flex-start; }
     #root .v-application .ewo-login .login-sd { padding: 20px; }
     #root .v-application .ewo-login-heading h1 { font-size: 20px; }

@@ -4,6 +4,7 @@ const cfgHelper = require('../helpers/config')
 const fs = require('fs')
 const path = require('path')
 const yaml = require('js-yaml')
+const resolveBrand = require('../helpers/brand')
 
 /* global WIKI */
 
@@ -51,6 +52,7 @@ module.exports = {
     // Merge with defaults
 
     appconfig = _.defaultsDeep(appconfig, appdata.defaults.config)
+    Object.assign(appconfig, resolveBrand(appconfig))
 
     if (appconfig.port < 1 || process.env.HEROKU) {
       appconfig.port = process.env.PORT || 80
@@ -84,6 +86,7 @@ module.exports = {
     let conf = await WIKI.models.settings.getConfig()
     if (conf) {
       WIKI.config = _.defaultsDeep(conf, WIKI.config)
+      Object.assign(WIKI.config, resolveBrand(WIKI.config))
     } else {
       WIKI.logger.warn('DB Configuration is empty or incomplete. Switching to Setup mode...')
       WIKI.config.setup = true

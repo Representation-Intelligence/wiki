@@ -2,7 +2,7 @@
   v-app(:dark='$vuetify.theme.dark').source
     nav-header
     v-content
-      v-toolbar(color='primary', dark)
+      v-toolbar.ewo-contextbar(flat)
         i18next.subheading(v-if='versionId > 0', path='common:page.viewingSourceVersion', tag='div')
           strong(place='date', :title='$options.filters.moment(versionDate, `LLL`)') {{versionDate | moment('lll')}}
           strong(place='path') /{{path}}
@@ -10,11 +10,11 @@
           strong(place='path') /{{path}}
         template(v-if='$vuetify.breakpoint.mdAndUp')
           v-spacer
-          .caption.blue--text.text--lighten-3 {{$t('common:page.id', { id: pageId })}}
-          .caption.blue--text.text--lighten-3.ml-4(v-if='versionId > 0') {{$t('common:page.versionId', { id: versionId })}}
-          v-btn.ml-4(v-if='versionId > 0', depressed, color='blue darken-1', @click='goHistory')
-            v-icon mdi-history
-          v-btn.ml-4(depressed, color='blue darken-1', @click='goLive') {{$t('common:page.returnNormalView')}}
+          .caption.ewo-contextbar-meta {{$t('common:page.id', { id: pageId })}}
+          .caption.ewo-contextbar-meta.ml-4(v-if='versionId > 0') {{$t('common:page.versionId', { id: versionId })}}
+        v-btn.ml-4(v-if='versionId > 0', depressed, color='primary', @click='goHistory')
+          v-icon mdi-history
+        v-btn.ml-4(depressed, color='primary', @click='goLive') {{$t('common:page.returnNormalView')}}
       v-card(tile)
         v-card-text
           v-card.grey.radius-7(flat, :class='$vuetify.theme.dark ? `darken-4` : `lighten-4`')

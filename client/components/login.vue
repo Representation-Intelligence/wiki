@@ -2,13 +2,13 @@
   v-app
     .login.ewo-login(:style='`background-image: url(` + bgUrl + `);`')
       .ewo-login-heading
-        .ewo-wordmark ewo
+        img.ewo-wordmark(:src='brandWordmark', alt='ewo', width='142', height='48')
         h1 {{ knowledgeTitle }}
       .login-sd
         .d-flex.mb-5
           .login-logo
             v-avatar(tile, size='34')
-              v-img(:src='logoUrl')
+              v-img(:src='logoUrl', :alt='siteTitle', contain)
           .login-title
             .text-h6.grey--text.text--darken-4 {{ siteTitle }}
         v-alert.mb-0(
@@ -314,7 +314,12 @@ export default {
     isSocialShown () {
       return this.strategies.length > 1
     },
-    logoUrl () { return siteConfig.logoUrl },
+    brandWordmark () { return `/_assets/brand/ewo-wordmark-${this.$vuetify.theme.dark ? 'dark' : 'light'}.svg` },
+    logoUrl () {
+      return siteConfig.logoUrl === '/_assets/brand/ewo-mark-light.svg' && this.$vuetify.theme.dark ?
+        '/_assets/brand/ewo-mark-dark.svg' :
+        siteConfig.logoUrl
+    },
     filteredStrategies () {
       const qParams = new URLSearchParams(window.location.search)
       if (this.hideLocal && !qParams.has('all')) {

@@ -10,6 +10,26 @@
 - 登录组件：`client/components/login.vue` 增加中英文知识库标题，账号、密码、MFA、找回密码等认证流程保持上游实现。
 - 不复制 ai-habitat 的业务代码或服务，不改变权限模型、存储接口、数据库结构。
 
+## 品牌补全（2026-09-09）
+
+- 正式素材来自同一参考 commit 的 `apps/site/public/brand/`：亮暗字标 `habitat-logo-lockup-*-mode.svg`、小尺寸标记 `habitat-logo-mark-micro-*-mode.svg`，在本仓库命名为 `client/static/brand/ewo-*.svg`。SVG 内容保持原样。
+- favicon.ico 复用原站文件；PNG favicon、Apple touch icon、PWA 图标由正式小尺寸标记导出，Safari pinned tab 使用单色版本。图标与 manifest 链接携带品牌版本参数，避免沿用旧蝴蝶缓存。
+- 字体复用 `apps/site/public/fonts/AlimamaFangYuanTiVF-Thin.woff2`，同源加载，保留系统字体回退和 `font-display: swap`。
+- `server/helpers/brand.js` 在配置初始化和读取数据库后，将已知 Wiki.js 默认标题、Logo 解析为 ewo 品牌；仅修改内存，不执行数据库迁移。管理员的其他自定义标题和 Logo 原样保留。后台配置、页面标题、邮件配置与导航共用解析后的配置。
+- 导航、登录、欢迎、安装、404、无权限、新建页面提示及错误页使用正式品牌素材；保留上游项目名称的技术说明、开源署名和源码链接。
+- 历史页和源码页统一工具栏，手机端显示返回入口；返回阅读页时保留当前语言。历史页的对比选中态、版本卡片、亮暗差异表及中文/英文操作文案同步调整。
+- Vuetify 主色、次色和强调色与 ewo 主题保持一致，错误、警告和增删差异继续使用各自的语义颜色。
+
+验证命令使用 Node 24（与生产 Dockerfile 一致）：
+
+```sh
+yarn --frozen-lockfile --non-interactive
+yarn build
+yarn jest server --runInBand
+```
+
+`yarn jest` 不带范围时会误扫 Cypress 文件并报 `cy is not defined`；Cypress 应通过原有 CI 容器运行。新增品牌、历史页手机暗色和返回行为断言已加入该用例。
+
 ## 构建与验证
 
 - 使用仓库 `yarn.lock` 和生产 Dockerfile 构建。
