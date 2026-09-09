@@ -9,7 +9,7 @@ on:
       - 'v*'
 
 env:
-  BASE_DEV_VERSION: 2.5.0
+  BASE_DEV_VERSION: 2.5.314
 
 jobs:
 
@@ -339,14 +339,6 @@ jobs:
         name: drop-win
         path: drop-win
 
-    - name: Generate Changelog
-      id: changelog
-      uses: Requarks/changelog-action@v1
-      with:
-        token: ${{ github.token }}
-        tag: ${{ github.ref_name }}
-        writeToFile: false
-
     - name: Update GitHub Release
       uses: ncipollo/release-action@v1.21.0
       with:
@@ -354,61 +346,7 @@ jobs:
         draft: false
         makeLatest: true
         name: ${{ github.ref_name }}
-        body: ${{ steps.changelog.outputs.changes }}
+        generateReleaseNotes: true
+        body: ewo Wiki 定制版本。源码与镜像构建记录见本仓库对应 commit 和 Actions run。
         token: ${{ github.token }}
         artifacts: 'drop/wiki-js.tar.gz,drop-win/wiki-js-windows.tar.gz'
-
-    # - name: Notify Slack Releases Channel
-    #   uses: slackapi/slack-github-action@v1.26.0
-    #   with:
-    #     payload: |
-    #       {
-    #         "text": "Wiki.js ${{ github.ref_name }} has been released."
-    #       }
-    #   env:
-    #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-    #     SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
-    - name: Notify Telegram Channel
-      uses: appleboy/telegram-action@v1.0.1
-      with:
-        to: ${{ secrets.TELEGRAM_TO }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        format: markdown
-        disable_web_page_preview: true
-        message: |
-          Wiki.js *${{ github.ref_name }}* has been released!
-          See [release notes](https://github.com/ghcr.io/representation-intelligence/wiki/releases) for details.
-
-    - name: Notify Discord Channel
-      uses: sebastianpopp/discord-action@v2.0
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK }}
-        message: Wiki.js ${{ github.ref_name }} has been released! See https://github.com/ghcr.io/representation-intelligence/wiki/releases for details.
-
-  # build-do-image:
-  #   name: Build DigitalOcean Image
-  #   runs-on: ubuntu-latest
-  #   needs: [release]
-
-  #   steps:
-  #   - uses: actions/checkout@v6
-
-  #   - name: Set Version Variables
-  #     run: |
-  #       echo "Using TAG mode: $GITHUB_REF_NAME"
-  #       echo "REL_VERSION_STRICT=${GITHUB_REF_NAME#?}" >> $GITHUB_ENV
-
-  #   - name: Install Packer
-  #     run: |
-  #       curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-  #       sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-  #       sudo apt-get update && sudo apt-get install packer
-
-  #   - name: Build Droplet Image
-  #     env:
-  #       DIGITALOCEAN_API_TOKEN: ${{ secrets.DO_TOKEN }}
-  #       WIKI_APP_VERSION: ${{ env.REL_VERSION_STRICT }}
-  #     working-directory: dev/packer
-  #     run: |
-  #       packer build digitalocean.json

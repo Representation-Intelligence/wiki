@@ -182,6 +182,8 @@
               :loading='isLoading'
               ) {{ $t('auth:changePwd.proceed') }}
 
+      .ewo-source Wiki.js · #[a(href='https://github.com/Representation-Intelligence/wiki') Source / AGPL-3.0]
+
     //-------------------------------------------------
     //- TFA FORM
     //-------------------------------------------------

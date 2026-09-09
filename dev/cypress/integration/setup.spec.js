@@ -62,12 +62,24 @@ describe('ewo knowledge workspace', () => {
       expect(body.errors).to.be.undefined
       expect(body.data.users.update.responseResult.succeeded).to.eq(true)
     })
+    // Appearance is carried in the login session; refresh it after admin changes.
+    cy.clearCookie('jwt')
+    cy.visit('/login')
+    cy.get('.login-form input[type=email]').type('test@example.com')
+    cy.get('.login-form input[type=password]').type('12345678', { log: false })
+    cy.get('.login-form > button').click()
+    cy.location('pathname', { timeout: 30000 }).should('not.eq', '/login')
     cy.viewport(375, 812)
     cy.visit('/en/ewo-acceptance')
     cy.get('.v-application').should('have.class', 'theme--dark')
     cy.get('.contents').should('contain', 'A shared guide for the team.')
     cy.document().then(doc => {
       expect(doc.documentElement.scrollWidth).to.be.at.most(375)
+    })
+    cy.get('.nav-header .mdi-account-circle').closest('button').then($button => {
+      const bounds = $button[0].getBoundingClientRect()
+      expect(bounds.left).to.be.at.least(0)
+      expect(bounds.right).to.be.at.most(375)
     })
     cy.screenshot('ewo-reading-mobile-dark')
   })

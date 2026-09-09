@@ -88,7 +88,7 @@
       overflow: hidden;
     }
     .page-col-sd .v-list { background: transparent !important; }
-    .v-main > .container.grey { background: var(--ewo-bg) !important; }
+    .v-main .container.grey { background: var(--ewo-bg) !important; }
     .page-header-section { min-height: 112px; }
     .page-header-headings .headline {
       color: var(--ewo-ink) !important;
@@ -105,6 +105,23 @@
       h4::after, h5::after, h6::after { background: var(--ewo-line); }
       h2 { margin-top: 2rem; }
     }
+    .page-col-sd .overline,
+    &.admin .headline { color: var(--ewo-link) !important; }
+    .comments-header,
+    .comments-main,
+    .v-dialog .dialog-header:not(.is-red):not(.is-orange) {
+      background: var(--ewo-paper) !important;
+      color: var(--ewo-ink) !important;
+      border-color: var(--ewo-line) !important;
+    }
+    .comments-header .v-icon,
+    .v-dialog .dialog-header:not(.is-red):not(.is-orange) .v-icon { color: var(--ewo-link) !important; }
+    .v-dialog .dialog-header:not(.is-red):not(.is-orange) .v-btn--disabled { color: var(--ewo-muted) !important; }
+    .comments-container { border: 1px solid var(--ewo-line); border-radius: 16px; overflow: hidden; }
+    .v-footer { background: var(--ewo-paper) !important; border-top: 1px solid var(--ewo-line); }
+    .ewo-source { font-size: 12px; color: var(--ewo-muted); }
+    .ewo-source a { color: var(--ewo-link); }
+
     .v-btn.primary:not(.v-btn--disabled) {
       background: var(--ewo-button) !important;
       border-color: var(--ewo-primary) !important;
@@ -178,6 +195,16 @@
     .ewo-login .v-btn--text { color: var(--ewo-muted) !important; }
   }
   @media (max-width: 600px) {
+    #root .v-application .nav-header {
+      > .v-toolbar__content > .layout { margin: 0; min-width: 0; }
+      .nav-header-inner .v-toolbar__content { padding: 0 !important; }
+      .flex.xs5 { flex-basis: 34%; max-width: 34%; }
+      .flex.xs7 { flex-basis: 66%; max-width: 66%; }
+      .nav-header-inner.pr-4 { padding-right: 0 !important; }
+      .v-toolbar__content { padding-left: 4px; padding-right: 4px; }
+      .v-btn--icon { width: 36px; min-width: 36px; height: 48px !important; margin: 0 !important; }
+      .v-toolbar__title { font-size: 16px; }
+    }
     #root .v-application .ewo-login { padding: 28px 16px; justify-content: flex-start; }
     #root .v-application .ewo-login .login-sd { padding: 20px; }
     #root .v-application .ewo-login-heading h1 { font-size: 20px; }
