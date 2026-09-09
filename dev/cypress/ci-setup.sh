@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
 case $MATRIXENV in
 postgres)
   echo "Using PostgreSQL..."
@@ -43,3 +46,13 @@ sqlite)
   echo "Invalid DB Type!"
   ;;
 esac
+
+# Do not race Cypress against Wiki.js startup / migrations.
+for attempt in $(seq 1 90); do
+  if curl --fail --silent http://localhost:3000/ > /dev/null; then
+    exit 0
+  fi
+  sleep 2
+done
+docker logs wiki
+exit 1
