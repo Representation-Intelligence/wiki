@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
 case $MATRIXENV in
 postgres)
   echo "Using PostgreSQL..."
@@ -6,7 +9,7 @@ postgres)
     echo "Waiting for database connection..."
     sleep 2
   done
-  docker run -d -p 3000:3000 --name wiki --network="host" -e "DB_TYPE=postgres" -e "DB_HOST=localhost" -e "DB_PORT=5432" -e "DB_NAME=wiki" -e "DB_USER=wiki" -e "DB_PASS=Password123!" requarks/wiki:canary-$REL_VERSION_STRICT
+  docker run -d -p 3000:3000 --name wiki --network="host" -e "DB_TYPE=postgres" -e "DB_HOST=localhost" -e "DB_PORT=5432" -e "DB_NAME=wiki" -e "DB_USER=wiki" -e "DB_PASS=Password123!" ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT
   ;;
 mysql)
   echo "Using MySQL..."
@@ -15,7 +18,7 @@ mysql)
     echo "Waiting for database connection..."
     sleep 2
   done
-  docker run -d -p 3000:3000 --name wiki --network="host" -e "DB_TYPE=mysql" -e "DB_HOST=localhost" -e "DB_PORT=3306" -e "DB_NAME=wiki" -e "DB_USER=wiki" -e "DB_PASS=Password123!" requarks/wiki:canary-$REL_VERSION_STRICT
+  docker run -d -p 3000:3000 --name wiki --network="host" -e "DB_TYPE=mysql" -e "DB_HOST=localhost" -e "DB_PORT=3306" -e "DB_NAME=wiki" -e "DB_USER=wiki" -e "DB_PASS=Password123!" ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT
   ;;
 mariadb)
   echo "Using MariaDB..."
@@ -24,7 +27,7 @@ mariadb)
     echo "Waiting for database connection..."
     sleep 2
   done
-  docker run -d -p 3000:3000 --name wiki --network="host" -e "DB_TYPE=mariadb" -e "DB_HOST=localhost" -e "DB_PORT=3306" -e "DB_NAME=wiki" -e "DB_USER=wiki" -e "DB_PASS=Password123!" requarks/wiki:canary-$REL_VERSION_STRICT
+  docker run -d -p 3000:3000 --name wiki --network="host" -e "DB_TYPE=mariadb" -e "DB_HOST=localhost" -e "DB_PORT=3306" -e "DB_NAME=wiki" -e "DB_USER=wiki" -e "DB_PASS=Password123!" ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT
   ;;
 mssql)
   echo "Using MS SQL Server..."
@@ -33,13 +36,23 @@ mssql)
     echo "Waiting for database connection..."
     sleep 2
   done
-  docker run -d -p 3000:3000 --name wiki --network="host" -e "DB_TYPE=mssql" -e "DB_HOST=localhost" -e "DB_PORT=1433" -e "DB_NAME=wiki" -e "DB_USER=SA" -e "DB_PASS=Password123!" requarks/wiki:canary-$REL_VERSION_STRICT
+  docker run -d -p 3000:3000 --name wiki --network="host" -e "DB_TYPE=mssql" -e "DB_HOST=localhost" -e "DB_PORT=1433" -e "DB_NAME=wiki" -e "DB_USER=SA" -e "DB_PASS=Password123!" ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT
   ;;
 sqlite)
   echo "Using SQLite..."
-  docker run -d -p 3000:3000 --name wiki --network="host" -e "DB_TYPE=sqlite" -e "DB_FILEPATH=db.sqlite" requarks/wiki:canary-$REL_VERSION_STRICT
+  docker run -d -p 3000:3000 --name wiki --network="host" -e "DB_TYPE=sqlite" -e "DB_FILEPATH=db.sqlite" ghcr.io/representation-intelligence/wiki:canary-$REL_VERSION_STRICT
   ;;
 *)
   echo "Invalid DB Type!"
   ;;
 esac
+
+# Do not race Cypress against Wiki.js startup / migrations.
+for attempt in $(seq 1 90); do
+  if curl --fail --silent http://localhost:3000/ > /dev/null; then
+    exit 0
+  fi
+  sleep 2
+done
+docker logs wiki
+exit 1

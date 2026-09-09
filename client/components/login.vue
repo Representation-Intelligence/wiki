@@ -1,6 +1,9 @@
 <template lang="pug">
   v-app
-    .login(:style='`background-image: url(` + bgUrl + `);`')
+    .login.ewo-login(:style='`background-image: url(` + bgUrl + `);`')
+      .ewo-login-heading
+        .ewo-wordmark ewo
+        h1 {{ knowledgeTitle }}
       .login-sd
         .d-flex.mb-5
           .login-logo
@@ -179,6 +182,8 @@
               :loading='isLoading'
               ) {{ $t('auth:changePwd.proceed') }}
 
+      .ewo-source Wiki.js · #[a(href='https://github.com/Representation-Intelligence/wiki') Source / AGPL-3.0]
+
     //-------------------------------------------------
     //- TFA FORM
     //-------------------------------------------------
@@ -299,6 +304,9 @@ export default {
     }
   },
   computed: {
+    knowledgeTitle () {
+      return siteConfig.lang.startsWith('zh') ? '让知识成为团队的共同积累' : 'A shared home for team knowledge'
+    },
     activeModal: sync('editor/activeModal'),
     siteTitle () {
       return siteConfig.title

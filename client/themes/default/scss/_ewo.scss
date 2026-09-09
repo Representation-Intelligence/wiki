@@ -1,0 +1,215 @@
+// Visual reference: ai-habitat apps/site/src/user-console/user-console.css.
+// Screen-only layer preserves Wiki.js print output and application behavior.
+@media screen {
+  #root .v-application {
+    --ewo-bg: #f3eee4;
+    --ewo-paper: #fffbf4;
+    --ewo-panel: #fff;
+    --ewo-ink: #182133;
+    --ewo-muted: #5b657c;
+    --ewo-primary: #d84a33;
+    --ewo-button: #c63e29;
+    --ewo-link: #b53724;
+    --ewo-on-primary: #fff;
+    --ewo-line: rgba(87, 98, 125, .16);
+    --ewo-shadow: 0 12px 32px rgba(125, 133, 154, .12);
+    background: var(--ewo-bg);
+    color: var(--ewo-ink);
+    font-family: 'PingFang SC', 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    -webkit-font-smoothing: antialiased;
+
+    &.theme--dark {
+      --ewo-bg: #100d10;
+      --ewo-paper: #1a1620;
+      --ewo-panel: #211c28;
+      --ewo-ink: #f4f1f6;
+      --ewo-muted: #a49ba6;
+      --ewo-primary: #ff6a3d;
+      --ewo-button: #ff6a3d;
+      --ewo-link: #ff8c6a;
+      --ewo-on-primary: #100d10;
+      --ewo-line: rgba(255, 238, 232, .1);
+      --ewo-shadow: 0 12px 32px rgba(0, 0, 0, .35);
+      color-scheme: dark;
+    }
+
+    .v-application--wrap,
+    .v-main {
+      background: var(--ewo-bg) !important;
+    }
+
+    .nav-header,
+    .nav-header-inner,
+    .nav-header .v-toolbar__extension > .v-toolbar {
+      background: var(--ewo-paper) !important;
+      color: var(--ewo-ink);
+    }
+    .nav-header { border-bottom: 1px solid var(--ewo-line); }
+    .nav-header .v-icon,
+    .nav-header .v-btn { color: var(--ewo-muted) !important; }
+    .nav-header .v-toolbar__title { font-weight: 600; letter-spacing: -.02em; }
+    .nav-header .v-input__slot {
+      background: var(--ewo-panel) !important;
+      border: 1px solid var(--ewo-line);
+    }
+    .nav-header input,
+    .nav-header .v-label { color: var(--ewo-muted) !important; }
+
+    .v-navigation-drawer,
+    .v-navigation-drawer .v-list,
+    .v-navigation-drawer .pa-3.d-flex {
+      background: var(--ewo-paper) !important;
+      border-color: var(--ewo-line) !important;
+    }
+    .v-navigation-drawer .v-list-item,
+    .v-navigation-drawer .v-list-item__title,
+    .v-navigation-drawer .v-icon { color: var(--ewo-ink) !important; }
+    .v-navigation-drawer .v-subheader { color: var(--ewo-muted); }
+    .v-navigation-drawer .v-list-item {
+      margin: 3px 10px;
+      border-radius: 10px;
+      min-height: 42px;
+    }
+    .v-navigation-drawer .v-list-item--active { color: var(--ewo-primary) !important; }
+    .v-navigation-drawer .pa-3.d-flex .v-btn {
+      background: var(--ewo-panel) !important;
+      color: var(--ewo-ink);
+    }
+
+    .v-card {
+      background-color: var(--ewo-panel);
+      color: var(--ewo-ink);
+      border-radius: 16px;
+    }
+    .page-col-sd .v-card {
+      background: var(--ewo-paper);
+      border: 1px solid var(--ewo-line);
+      box-shadow: none;
+      overflow: hidden;
+    }
+    .page-col-sd .v-list { background: transparent !important; }
+    .v-main .container.grey { background: var(--ewo-bg) !important; }
+    .page-header-section { min-height: 112px; }
+    .page-header-headings .headline {
+      color: var(--ewo-ink) !important;
+      font-weight: 600;
+      letter-spacing: -.025em !important;
+    }
+    .page-header-headings .caption { color: var(--ewo-muted) !important; }
+    .v-main .contents {
+      color: var(--ewo-ink);
+      line-height: 1.85;
+      a:not(.is-invalid-page) { color: var(--ewo-link); }
+      h1, h2, h3, h4, h5, h6 { color: var(--ewo-ink); line-height: 1.5; }
+      h1::after, h2::after, h3::after,
+      h4::after, h5::after, h6::after { background: var(--ewo-line); }
+      h2 { margin-top: 2rem; }
+    }
+    .page-col-sd .overline,
+    &.admin .headline { color: var(--ewo-link) !important; }
+    .comments-header,
+    .comments-main,
+    .v-dialog .dialog-header:not(.is-red):not(.is-orange) {
+      background: var(--ewo-paper) !important;
+      color: var(--ewo-ink) !important;
+      border-color: var(--ewo-line) !important;
+    }
+    .comments-header .v-icon,
+    .v-dialog .dialog-header:not(.is-red):not(.is-orange) .v-icon { color: var(--ewo-link) !important; }
+    .v-dialog .dialog-header:not(.is-red):not(.is-orange) .v-btn--disabled { color: var(--ewo-muted) !important; }
+    .comments-container { border: 1px solid var(--ewo-line); border-radius: 16px; overflow: hidden; }
+    .v-footer { background: var(--ewo-paper) !important; border-top: 1px solid var(--ewo-line); }
+    .ewo-source { font-size: 12px; color: var(--ewo-muted); }
+    .ewo-source a { color: var(--ewo-link); }
+
+    .v-btn.primary:not(.v-btn--disabled) {
+      background: var(--ewo-button) !important;
+      border-color: var(--ewo-primary) !important;
+      color: var(--ewo-on-primary) !important;
+    }
+    .v-btn:not(.v-btn--icon):not(.v-btn--fab) { border-radius: 12px; letter-spacing: .02em; }
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--ewo-link);
+      outline-offset: 3px;
+    }
+
+    .ewo-login {
+      background: radial-gradient(ellipse at 20% 0, rgba(216, 74, 51, .1), transparent 60%), var(--ewo-bg) !important;
+      min-height: 100vh;
+      min-height: 100dvh;
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 20px;
+      gap: 28px;
+    }
+    .ewo-login-heading { text-align: center; max-width: 460px; }
+    .ewo-wordmark { color: var(--ewo-primary); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -.06em; }
+    .ewo-login-heading h1 { font-size: 23px; font-weight: 500; line-height: 1.5; margin-top: 18px; }
+    .ewo-login .login-sd {
+      background: var(--ewo-paper);
+      border: 1px solid var(--ewo-line);
+      border-radius: 22px;
+      box-shadow: var(--ewo-shadow);
+      width: 460px;
+      max-width: 100%;
+      height: auto;
+      margin: 0;
+      padding: 24px;
+      backdrop-filter: none;
+    }
+    .ewo-login .login-logo { background: var(--ewo-panel); border: 1px solid var(--ewo-line); border-radius: 12px; margin-left: 0; }
+    .ewo-login .login-title { text-shadow: none; }
+    .ewo-login .login-title .text-h6 { color: var(--ewo-ink) !important; }
+    .ewo-login .login-subtitle,
+    .ewo-login .login-info,
+    .ewo-login .login-form,
+    .ewo-login .login-list {
+      background: none;
+      border: 0;
+      text-shadow: none;
+      color: var(--ewo-muted);
+      padding: 8px 0 12px;
+    }
+    .ewo-login .login-subtitle { text-align: start; }
+    .ewo-login .v-input__slot {
+      background: var(--ewo-panel) !important;
+      border: 1px solid var(--ewo-line);
+      border-radius: 12px;
+      min-height: 52px;
+    }
+    .ewo-login input { color: var(--ewo-ink) !important; }
+    .ewo-login input::placeholder { color: var(--ewo-muted) !important; opacity: 1; }
+    .ewo-login .v-input .v-icon { color: var(--ewo-muted) !important; }
+    .ewo-login .v-input--is-focused .v-input__slot { outline: 2px solid var(--ewo-link); outline-offset: 1px; }
+    .ewo-login .login-form > .v-btn:not(.v-btn--disabled) {
+      background: var(--ewo-button) !important;
+      color: var(--ewo-on-primary) !important;
+      border-radius: 999px;
+      box-shadow: none;
+      min-height: 48px;
+      margin-top: 16px !important;
+    }
+    .ewo-login .v-btn--text { color: var(--ewo-muted) !important; }
+  }
+  @media (max-width: 600px) {
+    #root .v-application .nav-header {
+      > .v-toolbar__content > .layout { margin: 0; min-width: 0; }
+      .nav-header-inner .v-toolbar__content { padding: 0 !important; }
+      .flex.xs5 { flex-basis: 34%; max-width: 34%; }
+      .flex.xs7 { flex-basis: 66%; max-width: 66%; }
+      .nav-header-inner.pr-4 { padding-right: 0 !important; }
+      .v-toolbar__content { padding-left: 4px; padding-right: 4px; }
+      .v-btn--icon { width: 36px; min-width: 36px; height: 48px !important; margin: 0 !important; }
+      .v-toolbar__title { font-size: 16px; }
+    }
+    #root .v-application .ewo-login { padding: 28px 16px; justify-content: flex-start; }
+    #root .v-application .ewo-login .login-sd { padding: 20px; }
+    #root .v-application .ewo-login-heading h1 { font-size: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #root .v-application--wrap { transition: none; }
+  }
+}
