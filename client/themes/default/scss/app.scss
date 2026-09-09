@@ -1,5 +1,82 @@
 /* THEME SPECIFIC STYLES */
 
+// Representation Intelligence / ewo visual language.
+// Keep this as a theme-only layer so upstream updates remain easy to merge.
+:root {
+  --ewo-bg: #f3eee4;
+  --ewo-surface: #fffbf4;
+  --ewo-ink: #182133;
+  --ewo-muted: #5b657c;
+  --ewo-primary: #d84a33;
+  --ewo-primary-hover: #e35d47;
+  --ewo-line: rgba(87, 98, 125, .16);
+  --ewo-radius: 12px;
+  --ewo-shadow: 0 12px 30px rgba(125, 133, 154, .12);
+}
+
+.v-application {
+  background: var(--ewo-bg) !important;
+  color: var(--ewo-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  .nav-header,
+  .nav-header-inner {
+    background: var(--ewo-ink) !important;
+  }
+
+  .nav-header .v-toolbar__title {
+    color: #fff;
+    letter-spacing: .01em;
+    font-weight: 600;
+  }
+
+  .v-navigation-drawer {
+    background: var(--ewo-ink) !important;
+    border: 0 !important;
+  }
+
+  .v-main,
+  .v-main .v-container {
+    background: var(--ewo-bg) !important;
+  }
+
+  .v-card,
+  .page-toc-card {
+    border: 1px solid var(--ewo-line) !important;
+    border-radius: var(--ewo-radius) !important;
+    box-shadow: var(--ewo-shadow) !important;
+  }
+
+  .v-btn--contained.primary,
+  .v-btn.primary {
+    background-color: var(--ewo-primary) !important;
+    border-color: var(--ewo-primary) !important;
+  }
+
+  .v-btn--contained.primary:hover,
+  .v-btn.primary:hover {
+    background-color: var(--ewo-primary-hover) !important;
+  }
+
+  .v-text-field--solo > .v-input__control > .v-input__slot,
+  .v-input__slot {
+    border-radius: var(--ewo-radius);
+  }
+
+  .breadcrumbs-nav {
+    background: transparent !important;
+  }
+}
+
+.theme--dark.v-application {
+  --ewo-bg: #100d10;
+  --ewo-surface: #211c28;
+  --ewo-ink: #f4f1f6;
+  --ewo-muted: #a49ba6;
+  --ewo-line: rgba(255, 238, 232, .1);
+  background: var(--ewo-bg) !important;
+}
+
 .v-main .contents {
   color: mc('grey', '800');
   padding: .5rem 0 50px;
