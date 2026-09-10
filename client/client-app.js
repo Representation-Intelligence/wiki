@@ -211,7 +211,11 @@ let bootstrap = () => {
     vuetify: new Vuetify({
       rtl: siteConfig.rtl,
       theme: {
-        dark: darkModeEnabled
+        dark: darkModeEnabled,
+        themes: {
+          light: { primary: '#c63e29', secondary: '#5b657c', accent: '#b53724' },
+          dark: { primary: '#ff6a3d', secondary: '#a49ba6', accent: '#ff8c6a' }
+        }
       }
     }),
     mounted () {

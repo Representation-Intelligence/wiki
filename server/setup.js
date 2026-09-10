@@ -18,7 +18,7 @@ const randomBytesAsync = require('util').promisify(crypto.randomBytes)
 module.exports = () => {
   WIKI.config.site = {
     path: '',
-    title: 'Wiki.js'
+    title: 'ewo Wiki'
   }
 
   WIKI.system = require('./core/system')
@@ -133,7 +133,7 @@ module.exports = () => {
         injectHead: '',
         injectBody: ''
       })
-      _.set(WIKI.config, 'title', 'Wiki.js')
+      _.set(WIKI.config, 'title', 'ewo Wiki')
 
       // Init Telemetry
       WIKI.kernel.initTelemetry()
