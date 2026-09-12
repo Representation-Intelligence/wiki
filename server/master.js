@@ -163,6 +163,7 @@ module.exports = async () => {
   })
 
   app.use('/', ctrl.auth)
+  app.use('/', ctrl.mcp)
   app.use('/', ctrl.upload)
   app.use('/', ctrl.common)
 

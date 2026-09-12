@@ -15,6 +15,7 @@ extend type Mutation {
 # -----------------------------------------------
 
 type AuthenticationQuery {
+  personalTokens: [PersonalToken!]!
   apiKeys: [AuthenticationApiKey] @auth(requires: ["manage:system", "manage:api"])
 
   apiState: Boolean! @auth(requires: ["manage:system", "manage:api"])
@@ -31,6 +32,8 @@ type AuthenticationQuery {
 # -----------------------------------------------
 
 type AuthenticationMutation {
+  createPersonalToken(name: String!, expiresIn: String): PersonalTokenCreateResponse
+  revokePersonalToken(id: Int!): DefaultResponse
   createApiKey(
     name: String!
     expiration: String!
@@ -148,6 +151,23 @@ type AuthenticationApiKey {
   createdAt: Date!
   updatedAt: Date!
   isRevoked: Boolean!
+}
+
+type PersonalToken {
+  id: Int!
+  name: String!
+  tokenPrefix: String!
+  scopes: [String!]!
+  createdAt: Date!
+  expiresAt: Date!
+  lastUsedAt: Date
+  revokedAt: Date
+}
+
+type PersonalTokenCreateResponse {
+  responseResult: ResponseStatus
+  token: String
+  tokenInfo: PersonalToken
 }
 
 type AuthenticationCreateApiKeyResponse {

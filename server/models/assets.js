@@ -164,6 +164,7 @@ module.exports = class Asset extends Model {
     } catch (err) {
       WIKI.logger.warn(err)
     }
+    return asset
   }
 
   static async getAsset(assetPath, res) {

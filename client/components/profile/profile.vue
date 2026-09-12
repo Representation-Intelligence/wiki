@@ -163,11 +163,32 @@
                   autocomplete='off'
                   hide-details
                   )
-          v-card-chin(v-if='user.providerKey === `local`')
+            v-card-chin(v-if='user.providerKey === `local`')
             v-spacer
             v-btn.px-4(color='purple darken-4', dark, depressed, :loading='changePassLoading', type='submit', form='change-password-form')
               v-icon(left) mdi-progress-check
               span {{$t('profile:auth.changePassword')}}
+        v-card.mt-3.animated.fadeInUp.wait-p3s
+          v-toolbar(color='indigo', dark, dense, flat)
+            v-toolbar-title.subtitle-1 MCP access
+          v-card-text
+            p.caption.grey--text.text--darken-1 Create a personal token for your AI tools. The full token is shown once.
+            v-text-field(v-model='tokenName', label='Token name', outlined, dense, hide-details='auto')
+            v-select(v-model='tokenExpiresIn', :items='tokenExpiryOptions', label='Expires in', outlined, dense)
+            v-btn(color='indigo', dark, depressed, :loading='tokenLoading', @click='createMcpToken')
+              v-icon(left) mdi-key-plus
+              span Create token
+            v-alert(v-if='newToken', type='warning', dense, outlined, class='mt-3')
+              div.subtitle-2 Copy this token now. It will not be shown again.
+              code {{ newToken }}
+            v-list(two-line, dense, class='mt-2')
+              v-list-item(v-for='token of mcpTokens', :key='token.id')
+                v-list-item-content
+                  v-list-item-title {{ token.name }} ({{ token.tokenPrefix }}…)
+                  v-list-item-subtitle Expires {{ token.expiresAt | moment('L') }}
+                v-list-item-action
+                  v-btn(icon, small, @click='revokeMcpToken(token.id)')
+                    v-icon(color='error') mdi-key-remove
       v-flex(lg6 xs12)
         //- v-card
         //-   v-toolbar(color='blue-grey', dark, dense, flat)
@@ -381,6 +402,12 @@ export default {
       currentPass: '',
       newPass: '',
       verifyPass: '',
+      tokenName: 'AI client',
+      tokenExpiresIn: '90d',
+      tokenExpiryOptions: ['30d', '90d', '180d', '365d'],
+      tokenLoading: false,
+      newToken: '',
+      mcpTokens: [],
       editPop: {
         name: false,
         location: false,
@@ -712,6 +739,32 @@ export default {
     }
   },
   methods: {
+    async createMcpToken () {
+      this.tokenLoading = true
+      try {
+        const result = await this.$apollo.mutate({
+          mutation: gql`mutation ($name: String!, $expiresIn: String) { authentication { createPersonalToken(name: $name, expiresIn: $expiresIn) { responseResult { succeeded message } token tokenInfo { id name tokenPrefix expiresAt } } } }`,
+          variables: { name: this.tokenName, expiresIn: this.tokenExpiresIn }
+        })
+        const response = _.get(result, 'data.authentication.createPersonalToken', {})
+        if (!response.responseResult.succeeded) throw new Error(response.responseResult.message)
+        this.newToken = response.token
+        this.mcpTokens.unshift(response.tokenInfo)
+      } catch (err) { this.$store.commit('pushGraphError', err) }
+      this.tokenLoading = false
+    },
+    async revokeMcpToken (id) {
+      try {
+        const result = await this.$apollo.mutate({
+          mutation: gql`mutation ($id: Int!) { authentication { revokePersonalToken(id: $id) { responseResult { succeeded message } } } }`,
+          variables: { id }
+        })
+        const response = _.get(result, 'data.authentication.revokePersonalToken.responseResult', {})
+        if (!response.succeeded) throw new Error(response.message)
+        const token = this.mcpTokens.find(item => item.id === id)
+        if (token) token.revokedAt = new Date().toISOString()
+      } catch (err) { this.$store.commit('pushGraphError', err) }
+    },
     /**
      * Focus an input after delay
      */
@@ -884,6 +937,13 @@ export default {
     }
   },
   apollo: {
+    mcpTokens: {
+      query: gql`
+        { authentication { personalTokens { id name tokenPrefix scopes createdAt expiresAt lastUsedAt revokedAt } } }
+      `,
+      fetchPolicy: 'network-only',
+      update: data => _.cloneDeep(data.authentication.personalTokens)
+    },
     user: {
       query: gql`
         {

@@ -112,7 +112,16 @@ module.exports = {
    */
   authenticate (req, res, next) {
     WIKI.auth.passport.authenticate('jwt', {session: false}, async (err, user, info) => {
-      if (err) { return next() }
+      if (err) {
+        const authHeader = req.get('authorization') || ''
+        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null
+        const personalToken = await WIKI.models.personalTokens.authenticate(token)
+        if (personalToken) {
+          req.user = personalToken.user
+          req.mcpToken = personalToken.row
+        }
+        return next()
+      }
       let mustRevalidate = false
 
       // Expired but still valid within N days, just renew
@@ -168,6 +177,13 @@ module.exports = {
 
       // JWT is NOT valid, set as guest
       if (!user) {
+        const bearer = securityHelper.extractJWT(req)
+        const personalToken = await WIKI.models.personalTokens.authenticate(bearer)
+        if (personalToken) {
+          req.user = personalToken.user
+          req.mcpToken = personalToken.row
+          return next()
+        }
         if (WIKI.auth.guest.cacheExpiration <= DateTime.utc()) {
           WIKI.auth.guest = await WIKI.models.users.getGuestUser()
           WIKI.auth.guest.cacheExpiration = DateTime.utc().plus({ minutes: 1 })

@@ -313,6 +313,7 @@ module.exports = class Page extends Model {
       title: opts.title,
       toc: '[]',
       extra: JSON.stringify({
+        ...(typeof opts.extra === 'string' ? (() => { try { return JSON.parse(opts.extra) } catch { return {} } })() : (opts.extra || {})),
         js: scriptJs,
         css: scriptCss
       })

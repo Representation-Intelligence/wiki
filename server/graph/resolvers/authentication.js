@@ -13,6 +13,10 @@ module.exports = {
     async authentication () { return {} }
   },
   AuthenticationQuery: {
+    async personalTokens (obj, args, context) {
+      if (!context.req.user || context.req.user.id < 1 || context.req.user.id === 2) throw new WIKI.Error.AuthRequired()
+      return WIKI.models.personalTokens.query().where('userId', context.req.user.id).orderBy('createdAt', 'desc').select('id', 'name', 'tokenPrefix', 'scopes', 'createdAt', 'expiresAt', 'lastUsedAt', 'revokedAt')
+    },
     /**
      * List of API Keys
      */
@@ -74,6 +78,25 @@ module.exports = {
     }
   },
   AuthenticationMutation: {
+    async createPersonalToken (obj, args, context) {
+      try {
+        if (!context.req.user || context.req.user.id < 1 || context.req.user.id === 2) throw new WIKI.Error.AuthRequired()
+        const expiresIn = args.expiresIn || '90d'
+        if (!/^([1-9][0-9]?)(d|h|m)$/.test(expiresIn)) throw new Error('Invalid expiration. Use e.g. 90d, 12h or 30m.')
+        const scopes = ['wiki:read', 'wiki:create', 'wiki:update', 'wiki:upload', 'wiki:publish:team']
+        const issued = await WIKI.models.personalTokens.issue({ userId: context.req.user.id, name: args.name, expiresIn, scopes })
+        return { token: issued.token, tokenInfo: issued.row, responseResult: graphHelper.generateSuccess('Personal MCP token created. Copy it now; it will not be shown again.') }
+      } catch (err) { return graphHelper.generateError(err) }
+    },
+    async revokePersonalToken (obj, args, context) {
+      try {
+        if (!context.req.user || context.req.user.id < 1 || context.req.user.id === 2) throw new WIKI.Error.AuthRequired()
+        const row = await WIKI.models.personalTokens.query().findOne({ id: args.id, userId: context.req.user.id })
+        if (!row) throw new Error('Token not found')
+        await WIKI.models.personalTokens.query().findById(row.id).patch({ revokedAt: new Date().toISOString() })
+        return { responseResult: graphHelper.generateSuccess('Personal MCP token revoked.') }
+      } catch (err) { return graphHelper.generateError(err) }
+    },
     /**
      * Create New API Key
      */
