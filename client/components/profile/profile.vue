@@ -176,10 +176,10 @@
             v-text-field(v-model='tokenName', label='名称，例如工作电脑上的 AI', outlined, dense, hide-details='auto')
             v-select(v-model='tokenMode', :items='[{text: `只读`, value: `read`}, {text: `阅读和贡献`, value: `write`}]', label='权限', outlined, dense)
             v-select(v-model='tokenExpiresIn', :items='tokenExpiryOptions', label='有效期', outlined, dense)
-            v-btn(color='indigo', dark, depressed, :loading='tokenLoading', @click='createMcpToken')
+            v-btn(color='indigo', dark, depressed, :loading='tokenLoading', @click='createMcpToken', data-cy='mcp-create-key')
               v-icon(left) mdi-key-plus
               span 创建 Key
-            v-alert(v-if='newToken', type='warning', dense, outlined, class='mt-3')
+            v-alert(data-cy='mcp-secret', v-if='newToken', type='warning', dense, outlined, class='mt-3')
               div.subtitle-2 请立即保存，仅显示这一次。不要将 Key 粘贴到聊天内容或代码仓库。
               code {{ newToken }}
             p: a(href='/mcp-audit') 查看 AI 操作记录
@@ -194,7 +194,7 @@
                   v-list-item-title {{ token.name }} ({{ token.tokenPrefix }}…)
                   v-list-item-subtitle {{ token.revokedAt ? `已撤销 · 到期 ` : `到期 ` }}{{ token.expiresAt | moment('L') }}
                 v-list-item-action
-                  v-btn(icon, small, :disabled='!!token.revokedAt', :aria-label='token.revokedAt ? `已撤销` : `撤销 Key`', @click='revokeMcpToken(token.id)')
+                  v-btn(icon, small, :disabled='!!token.revokedAt', :aria-label='token.revokedAt ? `已撤销` : `撤销 Key`', @click='revokeMcpToken(token.id)', data-cy='mcp-revoke-key')
                     v-icon(color='error') mdi-key-remove
       v-flex(lg6 xs12)
         //- v-card
