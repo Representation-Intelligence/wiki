@@ -100,7 +100,11 @@ async function dispatch (req, name, args) {
       if (args.visibility === 'team' && args.publish) requireScope(req, 'wiki:publish:team')
       const pathValue = pagePath(args)
       const duplicate = await WIKI.models.pages.query().findOne({ path: pathValue, localeCode: WIKI.config.lang.code })
-      if (duplicate) return publicPage(duplicate)
+      if (duplicate) {
+        const existingExtra = readExtra(duplicate)
+        if (duplicate.creatorId === req.user.id && existingExtra.idempotencyKey === args.idempotencyKey) return publicPage(duplicate)
+        throw error(-32009, '相同路径已有内容，请更换标题或先读取已有页面')
+      }
       const page = await WIKI.models.pages.createPage({ path: pathValue, title: args.title.trim(), content: args.content, description: '', editor: 'markdown', isPublished: args.visibility === 'team' && args.publish === true, isPrivate: false, locale: WIKI.config.lang.code, tags: args.tags || [], user: req.user, extra: JSON.stringify({ visibility: args.visibility, project: args.project || null, idempotencyKey: args.idempotencyKey }) })
       return publicPage(page)
     }
@@ -142,7 +146,7 @@ async function dispatch (req, name, args) {
 router.use(express.json({ limit: '8mb' }))
 router.all('/mcp', async (req, res) => {
   if (req.method !== 'POST') return res.status(405).set('Allow', 'POST').end()
-  if (!req.mcpToken && !(req.user && req.user.permissions && req.user.permissions.includes('manage:system'))) return res.status(401).set('WWW-Authenticate', 'Bearer realm="ewo-wiki-mcp"').json({ jsonrpc: '2.0', error: { code: -32001, message: '需要 MCP Token' } })
+  if (!req.mcpToken) return res.status(401).set('WWW-Authenticate', 'Bearer realm="ewo-wiki-mcp"').json({ jsonrpc: '2.0', error: { code: -32001, message: '需要 MCP Token' } })
   const body = req.body || {}
   const requestId = req.get('x-request-id') || `mcp_${crypto.randomBytes(12).toString('hex')}`
   try {
