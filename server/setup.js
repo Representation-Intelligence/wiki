@@ -265,7 +265,7 @@ module.exports = () => {
         permissions: JSON.stringify(['read:pages', 'read:source', 'read:history', 'read:assets', 'write:pages', 'write:assets']),
         pageRules: JSON.stringify([
           { id: 'team', roles: ['read:pages', 'read:source', 'read:history', 'read:assets', 'write:pages', 'write:assets'], match: 'START', deny: false, path: 'team/', locales: [] },
-          { id: 'public', roles: ['read:pages', 'read:source', 'read:assets'], match: 'START', deny: false, path: 'public/', locales: [] }
+          { id: 'public', roles: ['read:pages', 'read:source', 'read:assets', 'write:pages', 'write:assets'], match: 'START', deny: false, path: 'public/', locales: [] }
         ]),
         isSystem: false
       })

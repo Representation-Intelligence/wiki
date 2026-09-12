@@ -144,16 +144,22 @@ router.all('/mcp', async (req, res) => {
   if (req.method !== 'POST') return res.status(405).set('Allow', 'POST').end()
   if (!req.mcpToken && !(req.user && req.user.permissions && req.user.permissions.includes('manage:system'))) return res.status(401).set('WWW-Authenticate', 'Bearer realm="ewo-wiki-mcp"').json({ jsonrpc: '2.0', error: { code: -32001, message: '需要 MCP Token' } })
   const body = req.body || {}
+  const requestId = req.get('x-request-id') || `mcp_${crypto.randomBytes(12).toString('hex')}`
   try {
     if (body.method === 'initialize') return res.json({ jsonrpc: '2.0', id: body.id, result: { protocolVersion: body.params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'ewo-wiki-mcp', version: '1.0.0' } } })
     if (body.method === 'notifications/initialized') return res.status(202).end()
     if (body.method === 'tools/list') return res.json({ jsonrpc: '2.0', id: body.id, result: { tools } })
     if (body.method === 'tools/call') {
-      const result = await dispatch(req, body.params?.name, body.params?.arguments || {})
+      const toolName = body.params?.name
+      const result = await dispatch(req, toolName, body.params?.arguments || {})
+      await WIKI.models.mcpAuditEvents.query().insert({ requestId, userId: req.user?.id || null, tokenId: req.mcpToken?.id || null, tool: toolName, status: 'success', targetId: result?.id || result?.postId || null, metadata: { method: body.method }, createdAt: new Date().toISOString() })
       return res.json({ jsonrpc: '2.0', id: body.id, result: { content: [{ type: 'text', text: JSON.stringify(result) }] } })
     }
     return res.status(400).json({ jsonrpc: '2.0', id: body.id, error: { code: -32601, message: 'Unsupported method' } })
   } catch (err) {
+    if (body.method === 'tools/call') {
+      try { await WIKI.models.mcpAuditEvents.query().insert({ requestId, userId: req.user?.id || null, tokenId: req.mcpToken?.id || null, tool: body.params?.name || 'unknown', status: 'error', targetId: body.params?.arguments?.postId || null, metadata: { message: err.message }, createdAt: new Date().toISOString() }) } catch (auditErr) { WIKI.logger.warn(auditErr) }
+    }
     const e = err.code ? err : error(-32000, err.message || 'MCP request failed')
     return res.json({ jsonrpc: '2.0', id: body.id, error: e })
   }

@@ -1,7 +1,7 @@
 exports.up = async knex => {
   const teamRules = [
     { id: 'team', roles: ['read:pages', 'write:pages', 'read:source', 'read:history', 'read:assets', 'write:assets'], match: 'START', deny: false, path: 'team/', locales: [] },
-    { id: 'public', roles: ['read:pages', 'read:source', 'read:assets'], match: 'START', deny: false, path: 'public/', locales: [] }
+    { id: 'public', roles: ['read:pages', 'read:source', 'read:assets', 'write:pages', 'write:assets'], match: 'START', deny: false, path: 'public/', locales: [] }
   ]
   const publicRules = [{ id: 'public', roles: ['read:pages', 'read:assets'], match: 'START', deny: false, path: 'public/', locales: [] }]
   if (!await knex('groups').where('id', 4).first()) await knex('groups').insert({ id: 4, name: 'Team Members', permissions: JSON.stringify([]), pageRules: JSON.stringify([]), isSystem: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
