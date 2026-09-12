@@ -27,7 +27,7 @@ module.exports = class PersonalToken extends Model {
       name: name.trim(),
       tokenPrefix: token.slice(0, 18),
       tokenHash: this.hash(token),
-      scopes: JSON.stringify(scopes),
+      scopes,
       expiresAt,
       createdAt: moment.utc().toISOString()
     })
@@ -44,7 +44,9 @@ module.exports = class PersonalToken extends Model {
     if (!user || !user.isActive) return null
     user.permissions = user.getGlobalPermissions()
     user.groups = user.getGroups()
-    user.mcpScopes = JSON.parse(row.scopes || '[]')
+    user.mcpScopes = Array.isArray(row.scopes)
+      ? row.scopes
+      : (typeof row.scopes === 'string' && row.scopes.startsWith('[') ? JSON.parse(row.scopes) : String(row.scopes || '').split(',').filter(Boolean))
     await this.query().findById(row.id).patch({ lastUsedAt: moment.utc().toISOString() })
     return { user, row }
   }

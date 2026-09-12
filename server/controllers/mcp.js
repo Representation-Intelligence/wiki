@@ -25,12 +25,14 @@ function error (code, message) {
 
 function scope (req, wanted) {
   if (req.user && req.user.permissions && req.user.permissions.includes('manage:system')) return true
-  const scopes = req.mcpToken ? (Array.isArray(req.mcpToken.scopes) ? req.mcpToken.scopes : JSON.parse(req.mcpToken.scopes || '[]')) : []
-  return scopes.includes(wanted)
+  return tokenScopes(req).includes(wanted)
 }
 
 function tokenScopes (req) {
-  return req.mcpToken ? (Array.isArray(req.mcpToken.scopes) ? req.mcpToken.scopes : JSON.parse(req.mcpToken.scopes || '[]')) : []
+  if (!req.mcpToken) return []
+  if (Array.isArray(req.mcpToken.scopes)) return req.mcpToken.scopes
+  if (typeof req.mcpToken.scopes === 'string' && req.mcpToken.scopes.startsWith('[')) return JSON.parse(req.mcpToken.scopes)
+  return typeof req.mcpToken.scopes === 'string' ? req.mcpToken.scopes.split(',').filter(Boolean) : []
 }
 
 function requireScope (req, wanted) {
