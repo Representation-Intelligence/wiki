@@ -1,27 +1,23 @@
 <template lang='pug'>
-  v-container(fluid, grid-list-lg)
+  v-container(fluid, grid-list-lg).ewo-profile
     v-layout(row wrap)
       v-flex(xs12)
-        .profile-header
-          img.animated.fadeInUp(src='/_assets/svg/icon-profile.svg', alt='Users', style='width: 80px;')
-          .profile-header-title
-            .headline.primary--text.animated.fadeInLeft {{$t('profile:title')}}
-            .subheading.grey--text.animated.fadeInLeft {{$t('profile:subtitle')}}
+        header.ewo-profile-head
+          .ewo-profile-headings
+            h1 {{$t('profile:title')}}
+            p {{$t('profile:subtitle')}}
           v-spacer
-          v-btn.animated.fadeInDown(color='success', depressed, @click='saveProfile', :loading='saveLoading', large)
-            v-icon(left) mdi-check
+          v-btn.ewo-btn-primary.ewo-btn-pill(depressed, large, @click='saveProfile', :loading='saveLoading')
+            v-icon(left, small) mdi-check
             span {{$t('common:actions.save')}}
-          //- v-btn.animated.fadeInDown(outlined, color='primary', disabled).mr-0
-          //-   v-icon(left) mdi-earth
-          //-   span {{$t('profile:viewPublicProfile')}}
+
       v-flex(lg6 xs12)
-        v-card.animated.fadeInUp
-          v-toolbar(color='blue-grey', dark, dense, flat)
-            v-toolbar-title.subtitle-1 {{$t('profile:myInfo')}}
+        section.ewo-card
+          .ewo-card-header
+            v-icon(small) mdi-account-circle-outline
+            span {{$t('profile:myInfo')}}
           v-list(two-line, dense)
             v-list-item
-              v-list-item-avatar(size='32')
-                v-icon mdi-account
               v-list-item-content
                 v-list-item-title {{$t('profile:displayName')}}
                 v-list-item-subtitle {{ user.name }}
@@ -33,8 +29,8 @@
                   left
                   )
                   template(v-slot:activator='{ on }')
-                    v-btn(text, color='grey', small, v-on='on', @click='focusField(`iptDisplayName`)')
-                      v-icon(left) mdi-pencil
+                    v-btn.ewo-edit-btn(text, small, v-on='on', @click='focusField(`iptDisplayName`)')
+                      v-icon(left, small) mdi-pencil-outline
                       span {{ $t('common:actions:edit') }}
                   v-card
                     v-text-field(
@@ -50,8 +46,6 @@
                     )
             v-divider
             v-list-item
-              v-list-item-avatar(size='32')
-                v-icon mdi-map-marker
               v-list-item-content
                 v-list-item-title {{$t('profile:location')}}
                 v-list-item-subtitle {{ user.location }}
@@ -63,8 +57,8 @@
                   left
                   )
                   template(v-slot:activator='{ on }')
-                    v-btn(text, color='grey', small, v-on='on', @click='focusField(`iptLocation`)')
-                      v-icon(left) mdi-pencil
+                    v-btn.ewo-edit-btn(text, small, v-on='on', @click='focusField(`iptLocation`)')
+                      v-icon(left, small) mdi-pencil-outline
                       span {{ $t('common:actions:edit') }}
                   v-card
                     v-text-field(
@@ -80,8 +74,6 @@
                     )
             v-divider
             v-list-item
-              v-list-item-avatar(size='32')
-                v-icon mdi-briefcase
               v-list-item-content
                 v-list-item-title {{$t('profile:jobTitle')}}
                 v-list-item-subtitle {{ user.jobTitle }}
@@ -93,8 +85,8 @@
                   left
                   )
                   template(v-slot:activator='{ on }')
-                    v-btn(text, color='grey', small, v-on='on', @click='focusField(`iptJobTitle`)')
-                      v-icon(left) mdi-pencil
+                    v-btn.ewo-edit-btn(text, small, v-on='on', @click='focusField(`iptJobTitle`)')
+                      v-icon(left, small) mdi-pencil-outline
                       span {{ $t('common:actions:edit') }}
                   v-card
                     v-text-field(
@@ -109,42 +101,34 @@
                       @keydown.esc='editPop.jobTitle = false'
                     )
 
-        v-card.mt-3.animated.fadeInUp.wait-p2s
-          v-toolbar(color='blue-grey', dark, dense, flat)
-            v-toolbar-title
-              .subtitle-1 {{$t('profile:auth.title')}}
-          v-card-text.pt-0
-            v-subheader.pl-0: span.subtitle-2 {{$t('profile:auth.provider')}}
-            v-toolbar(
-              flat
-              :color='$vuetify.theme.dark ? "grey darken-2" : "purple lighten-5"'
-              dense
-              :class='$vuetify.theme.dark ? "grey--text text--lighten-1" : "purple--text text--darken-4"'
-              )
-              v-icon(:color='$vuetify.theme.dark ? "grey lighten-1" : "purple darken-4"') mdi-shield-lock
-              .subheading.ml-3 {{ user.providerName }}
-            //- v-divider.mt-3
-            //- v-subheader.pl-0: span.subtitle-2 Two-Factor Authentication (2FA)
-            //- .caption.mb-2 2FA adds an extra layer of security by requiring a unique code generated on your smartphone when signing in.
-            //- v-btn(color='purple darken-4', disabled).ml-0 Enable 2FA
-            //- v-btn(color='purple darken-4', dark, depressed, disabled).ml-0 Disable 2FA
+        section.ewo-card
+          .ewo-card-header
+            v-icon(small) mdi-shield-lock-outline
+            span {{$t('profile:auth.title')}}
+          .ewo-card-body
+            .ewo-card-sub {{$t('profile:auth.provider')}}
+            .ewo-provider
+              v-icon(small) mdi-shield-lock-outline
+              span {{ user.providerName }}
             template(v-if='user.providerKey === `local`')
               form#change-password-form(@submit.prevent='changePassword')
-                v-divider.mt-3
-                v-subheader.pl-0: span.subtitle-2 {{$t('profile:auth.changePassword')}}
+                .ewo-card-sub.mt-5 {{$t('profile:auth.changePassword')}}
                 v-text-field(
                   ref='iptCurrentPass'
                   v-model='currentPass'
                   outlined
+                  dense
                   :label='$t(`profile:auth.currentPassword`)'
                   type='password'
                   prepend-inner-icon='mdi-form-textbox-password'
                   autocomplete='current-password'
+                  hide-details='auto'
                   )
-                v-text-field(
+                v-text-field.mt-3(
                   ref='iptNewPass'
                   v-model='newPass'
                   outlined
+                  dense
                   :label='$t(`profile:auth.newPassword`)'
                   type='password'
                   prepend-inner-icon='mdi-form-textbox-password'
@@ -153,68 +137,86 @@
                   loading
                   )
                   password-strength(slot='progress', v-model='newPass')
-                v-text-field(
+                v-text-field.mt-3(
                   ref='iptVerifyPass'
                   v-model='verifyPass'
                   outlined
+                  dense
                   :label='$t(`profile:auth.verifyPassword`)'
                   type='password'
                   prepend-inner-icon='mdi-form-textbox-password'
                   autocomplete='off'
-                  hide-details
+                  hide-details='auto'
                   )
-          v-card-chin(v-if='user.providerKey === `local`')
+          .ewo-card-actions(v-if='user.providerKey === `local`')
             v-spacer
-            v-btn.px-4(color='purple darken-4', dark, depressed, :loading='changePassLoading', type='submit', form='change-password-form')
-              v-icon(left) mdi-progress-check
+            v-btn.ewo-btn-primary.px-5(depressed, :loading='changePassLoading', type='submit', form='change-password-form')
+              v-icon(left, small) mdi-progress-check
               span {{$t('profile:auth.changePassword')}}
-        v-card.mt-3.animated.fadeInUp.wait-p3s
-          v-toolbar(color='indigo', dark, dense, flat)
-            v-toolbar-title.subtitle-1 AI 连接 / 个人 Key
-          v-card-text
-            p.caption.grey--text.text--darken-1 为自己的 AI 创建 Key。权限受账号本身权限限制；公开内容始终需要网页人工确认。
+
+        section.ewo-card
+          .ewo-card-header
+            v-icon(small) mdi-key-outline
+            span AI 连接 / 个人 Key
+          .ewo-card-body
+            p.ewo-hint 为自己的 AI 创建 Key。权限受账号本身权限限制；公开内容始终需要网页人工确认。
+
+            .ewo-card-sub 创建新 Key
             v-text-field(v-model='tokenName', label='名称，例如工作电脑上的 AI', outlined, dense, hide-details='auto')
-            v-select(v-model='tokenMode', :items='[{text: `只读`, value: `read`}, {text: `阅读和贡献`, value: `write`}]', label='权限', outlined, dense)
-            v-select(v-model='tokenExpiresIn', :items='tokenExpiryOptions', label='有效期', outlined, dense)
-            v-btn(color='indigo', dark, depressed, :loading='tokenLoading', @click='createMcpToken', data-cy='mcp-create-key')
-              v-icon(left) mdi-key-plus
+            .ewo-field-row.mt-3
+              v-select(v-model='tokenMode', :items='[{text: `只读`, value: `read`}, {text: `阅读和贡献`, value: `write`}]', label='权限', outlined, dense, hide-details='auto')
+              v-select(v-model='tokenExpiresIn', :items='tokenExpiryOptions', label='有效期', outlined, dense, hide-details='auto')
+            v-btn.ewo-btn-primary.mt-4(depressed, :loading='tokenLoading', @click='createMcpToken', data-cy='mcp-create-key')
+              v-icon(left, small) mdi-key-plus
               span 创建 Key
-            v-alert(data-cy='mcp-secret', v-if='newToken', type='warning', dense, outlined, class='mt-3')
-              div.subtitle-2 请立即保存，仅显示这一次。不要将 Key 粘贴到聊天内容或代码仓库。
-              code {{ newToken }}
-            p: a(href='/mcp-audit') 查看 AI 操作记录
-            p.mt-3 接入地址：https://wiki.representation.com.cn/mcp
-            p 本地客户端可下载或通过 npx 使用：
-            a(href='/_assets/representation-intelligence-wiki-mcp-1.0.0.tgz') 下载 MCP 客户端包
-            pre(style='white-space:pre-wrap;font-size:12px') npx --yes --package=https://wiki.representation.com.cn/_assets/representation-intelligence-wiki-mcp-1.0.0.tgz ewo-wiki-mcp
-            p.caption 将 Key 放入客户端的 EWO_WIKI_TOKEN 环境变量；请勿放在聊天消息或命令行参数中。
-            v-list(two-line, dense, class='mt-2')
-              v-list-item(v-for='token of mcpTokens', :key='token.id')
+
+            .ewo-secret(v-if='newToken', data-cy='mcp-secret')
+              .ewo-secret-title
+                v-icon(small) mdi-alert-outline
+                span 请立即保存，仅显示这一次。不要将 Key 粘贴到聊天内容或代码仓库。
+              .ewo-secret-value
+                code {{ newToken }}
+                v-btn(icon, small, aria-label='复制 Key', @click='copyText(newToken)')
+                  v-icon(small) mdi-content-copy
+
+            .ewo-card-sub.mt-5 接入方式
+            dl.ewo-connect
+              .ewo-connect-row
+                dt 接入地址
+                dd: code {{ mcpEndpoint }}
+              .ewo-connect-row
+                dt 本地客户端
+                dd: a(href='/_assets/representation-intelligence-wiki-mcp-1.0.0.tgz') 下载 MCP 客户端包
+            .ewo-command
+              pre {{ npxCommand }}
+              v-btn(icon, small, aria-label='复制命令', @click='copyText(npxCommand)')
+                v-icon(small) mdi-content-copy
+            p.ewo-hint 将 Key 放入客户端的 EWO_WIKI_TOKEN 环境变量；请勿放在聊天消息或命令行参数中。
+
+            .ewo-card-sub.mt-5 已创建的 Key
+            v-list.ewo-token-list(two-line, dense, v-if='mcpTokens.length')
+              v-list-item(v-for='token of mcpTokens', :key='token.id', :class='{ "is-revoked": token.revokedAt }')
                 v-list-item-content
-                  v-list-item-title {{ token.name }} ({{ token.tokenPrefix }}…)
-                  v-list-item-subtitle {{ token.revokedAt ? `已撤销 · 到期 ` : `到期 ` }}{{ token.expiresAt | moment('L') }}
+                  v-list-item-title
+                    span {{ token.name }}
+                    code.ewo-token-prefix {{ token.tokenPrefix }}…
+                  v-list-item-subtitle
+                    span(v-if='token.revokedAt') 已撤销 ·
+                    | 到期 {{ token.expiresAt | moment('L') }} · {{ token.scopes.includes('wiki:create') ? '读写' : '只读' }}
                 v-list-item-action
                   v-btn(icon, small, :disabled='!!token.revokedAt', :aria-label='token.revokedAt ? `已撤销` : `撤销 Key`', @click='revokeMcpToken(token.id)', data-cy='mcp-revoke-key')
-                    v-icon(color='error') mdi-key-remove
+                    v-icon(small) mdi-key-remove-outline
+            p.ewo-hint(v-else) 还没有 Key，创建一个开始接入。
+            a.ewo-audit-link(href='/mcp-audit') 查看 AI 操作记录
+              v-icon(small) mdi-arrow-right
+
       v-flex(lg6 xs12)
-        //- v-card
-        //-   v-toolbar(color='blue-grey', dark, dense, flat)
-        //-     v-toolbar-title
-        //-       .subtitle-1 Picture
-        //-   v-card-title
-        //-     v-avatar.blue(v-if='picture.kind === `initials`', :size='40')
-        //-       span.white--text.subheading {{picture.initials}}
-        //-     v-avatar(v-else-if='picture.kind === `image`', :size='40')
-        //-       v-img(:src='picture.url')
-        //-     v-btn(outlined).mx-4 Upload Picture
-        //-     v-btn(outlined, disabled) Remove Picture
-        v-card.animated.fadeInUp.wait-p2s
-          v-toolbar(color='blue-grey', dark, dense, flat)
-            v-toolbar-title.subtitle-1 {{$t('profile:preferences')}}
+        section.ewo-card
+          .ewo-card-header
+            v-icon(small) mdi-tune-variant
+            span {{$t('profile:preferences')}}
           v-list(two-line, dense)
             v-list-item
-              v-list-item-avatar(size='32')
-                v-icon mdi-map-clock-outline
               v-list-item-content
                 v-list-item-title {{$t('profile:timezone')}}
                 v-list-item-subtitle {{ user.timezone }}
@@ -227,8 +229,8 @@
                   left
                   )
                   template(v-slot:activator='{ on }')
-                    v-btn(text, color='grey', small, v-on='on', @click='focusField(`iptTimezone`)')
-                      v-icon(left) mdi-pencil
+                    v-btn.ewo-edit-btn(text, small, v-on='on', @click='focusField(`iptTimezone`)')
+                      v-icon(left, small) mdi-pencil-outline
                       span {{ $t('common:actions:edit') }}
                   v-card(flat)
                     v-select(
@@ -256,8 +258,6 @@
                         span {{$t('common:actions.ok')}}
             v-divider
             v-list-item
-              v-list-item-avatar(size='32')
-                v-icon mdi-calendar-month-outline
               v-list-item-content
                 v-list-item-title {{$t('profile:dateFormat')}}
                 v-list-item-subtitle {{ user.dateFormat && user.dateFormat.length > 0 ? user.dateFormat : $t('profile:localeDefault') }}
@@ -270,8 +270,8 @@
                   left
                   )
                   template(v-slot:activator='{ on }')
-                    v-btn(text, color='grey', small, v-on='on', @click='focusField(`iptDateFormat`)')
-                      v-icon(left) mdi-pencil
+                    v-btn.ewo-edit-btn(text, small, v-on='on', @click='focusField(`iptDateFormat`)')
+                      v-icon(left, small) mdi-pencil-outline
                       span {{ $t('common:actions:edit') }}
                   v-card(flat)
                     v-select(
@@ -299,8 +299,6 @@
                         span {{$t('common:actions.ok')}}
             v-divider
             v-list-item
-              v-list-item-avatar(size='32')
-                v-icon mdi-palette
               v-list-item-content
                 v-list-item-title {{$t('profile:appearance')}}
                 v-list-item-subtitle {{ currentAppearance }}
@@ -313,8 +311,8 @@
                   left
                   )
                   template(v-slot:activator='{ on }')
-                    v-btn(text, color='grey', small, v-on='on', @click='focusField(`iptAppearance`)')
-                      v-icon(left) mdi-pencil
+                    v-btn.ewo-edit-btn(text, small, v-on='on', @click='focusField(`iptAppearance`)')
+                      v-icon(left, small) mdi-pencil-outline
                       span {{ $t('common:actions:edit') }}
                   v-card(flat)
                     v-select(
@@ -341,35 +339,40 @@
                         v-icon(left) mdi-check
                         span {{$t('common:actions.ok')}}
 
-        v-card.mt-3.animated.fadeInUp.wait-p3s
-          v-toolbar(color='primary', dark, dense, flat)
-            v-toolbar-title
-              .subtitle-1 {{$t('profile:groups.title')}}
+        section.ewo-card
+          .ewo-card-header
+            v-icon(small) mdi-account-group-outline
+            span {{$t('profile:groups.title')}}
           v-list(dense)
             template(v-for='(grp, idx) of user.groups')
               v-list-item(:key='`grp-id-` + grp')
-                v-list-item-avatar(size='32')
-                  v-icon mdi-account-group
                 v-list-item-content
                   v-list-item-title.body-2 {{grp}}
               v-divider(v-if='idx < user.groups.length - 1')
 
-        v-card.mt-3.animated.fadeInUp.wait-p4s
-          v-toolbar(color='teal', dark, dense, flat)
-            v-toolbar-title
-              .subtitle-1 {{$t('profile:activity.title')}}
-          v-card-text.grey--text.text--darken-2
-            .caption.grey--text {{$t('profile:activity.joinedOn')}}
-            .body-2: strong {{ user.createdAt | moment('LLLL') }}
-            .caption.grey--text.mt-3 {{$t('profile:activity.lastUpdatedOn')}}
-            .body-2: strong {{ user.updatedAt | moment('LLLL') }}
-            .caption.grey--text.mt-3 {{$t('profile:activity.lastLoginOn')}}
-            .body-2: strong {{ user.lastLoginAt | moment('LLLL') }}
-            v-divider.mt-3
-            .caption.grey--text.mt-3 {{$t('profile:activity.pagesCreated')}}
-            .body-2: strong {{ user.pagesTotal }}
-            .caption.grey--text.mt-3 {{$t('profile:activity.commentsPosted')}}
-            .body-2: strong 0
+        section.ewo-card
+          .ewo-card-header
+            v-icon(small) mdi-chart-timeline-variant
+            span {{$t('profile:activity.title')}}
+          .ewo-card-body
+            .ewo-stats
+              .ewo-stat
+                .ewo-stat-label {{$t('profile:activity.joinedOn')}}
+                .ewo-stat-value {{ user.createdAt | moment('LLLL') }}
+              .ewo-stat
+                .ewo-stat-label {{$t('profile:activity.lastUpdatedOn')}}
+                .ewo-stat-value {{ user.updatedAt | moment('LLLL') }}
+              .ewo-stat
+                .ewo-stat-label {{$t('profile:activity.lastLoginOn')}}
+                .ewo-stat-value {{ user.lastLoginAt | moment('LLLL') }}
+            v-divider.my-4
+            .ewo-stats.ewo-stats-counts
+              .ewo-stat
+                .ewo-stat-label {{$t('profile:activity.pagesCreated')}}
+                .ewo-stat-value {{ user.pagesTotal }}
+              .ewo-stat
+                .ewo-stat-label {{$t('profile:activity.commentsPosted')}}
+                .ewo-stat-value 0
 </template>
 
 <script>
@@ -381,7 +384,7 @@ import validate from 'validate.js'
 
 import PasswordStrength from '../common/password-strength.vue'
 
-/* global WIKI, siteConfig */
+/* global WIKI, siteConfig, navigator */
 
 export default {
   i18nOptions: {
@@ -416,6 +419,8 @@ export default {
       tokenLoading: false,
       newToken: '',
       mcpTokens: [],
+      mcpEndpoint: 'https://wiki.representation.com.cn/mcp',
+      npxCommand: 'npx --yes --package=https://wiki.representation.com.cn/_assets/representation-intelligence-wiki-mcp-1.0.0.tgz ewo-wiki-mcp',
       editPop: {
         name: false,
         location: false,
@@ -516,12 +521,12 @@ export default {
         { text: '(GMT+00:00) Abidjan', value: 'Africa/Abidjan' },
         { text: '(GMT+00:00) Accra', value: 'Africa/Accra' },
         { text: '(GMT+00:00) Bissau', value: 'Africa/Bissau' },
-        { text: '(GMT+00:00) Canary Islands', value: 'Atlantic/Canary' },
+        { text: '(GMT+00:00) Canary Islands', value: 'Atlantic/Canary_Islands' },
         { text: '(GMT+00:00) Casablanca', value: 'Africa/Casablanca' },
         { text: '(GMT+00:00) Danmarkshavn', value: 'America/Danmarkshavn' },
         { text: '(GMT+00:00) Dublin', value: 'Europe/Dublin' },
         { text: '(GMT+00:00) El Aaiun', value: 'Africa/El_Aaiun' },
-        { text: '(GMT+00:00) Faeroe', value: 'Atlantic/Faroe' },
+        { text: '(GMT+00:00) Faeroe', value: 'Atlantic/Faeroe' },
         { text: '(GMT+00:00) GMT (no daylight saving)', value: 'Etc/GMT' },
         { text: '(GMT+00:00) Lisbon', value: 'Europe/Lisbon' },
         { text: '(GMT+00:00) London', value: 'Europe/London' },
@@ -647,7 +652,7 @@ export default {
         { text: '(GMT+10:00) Eastern Time - Brisbane', value: 'Australia/Brisbane' },
         { text: '(GMT+10:00) Guam', value: 'Pacific/Guam' },
         { text: '(GMT+10:00) Moscow+07 - Vladivostok', value: 'Asia/Vladivostok' },
-        { text: '(GMT+10:00) Port Moresby', value: 'Pacific/Port_Moresby' },
+        { text: '(GMT+10:00) Port Moresby', value: 'Papua/Port_Moresby' },
         { text: '(GMT+10:00) Truk', value: 'Pacific/Chuuk' },
         { text: '(GMT+10:30) Central Time - Adelaide', value: 'Australia/Adelaide' },
         { text: '(GMT+11:00) Casey', value: 'Antarctica/Casey' },
@@ -774,6 +779,25 @@ export default {
         const token = this.mcpTokens.find(item => item.id === id)
         if (token) token.revokedAt = new Date().toISOString()
       } catch (err) { this.$store.commit('pushGraphError', err) }
+    },
+    /**
+     * Copy text to clipboard with a notification fallback
+     */
+    async copyText (text) {
+      try {
+        await navigator.clipboard.writeText(text)
+        this.$store.commit('showNotification', {
+          message: '已复制',
+          style: 'success',
+          icon: 'check'
+        })
+      } catch (err) {
+        this.$store.commit('showNotification', {
+          message: '复制失败，请手动选择复制',
+          style: 'red',
+          icon: 'warning'
+        })
+      }
     },
     /**
      * Focus an input after delay
@@ -991,5 +1015,345 @@ export default {
 </script>
 
 <style lang='scss'>
+.ewo-profile {
+  max-width: 1240px;
+  padding-top: 28px;
 
+  .ewo-profile-head {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 4px 8px 20px;
+  }
+  .ewo-profile-headings {
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -.02em;
+      line-height: 1.4;
+      color: var(--ewo-ink);
+    }
+    p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--ewo-muted);
+    }
+  }
+
+  .ewo-btn-primary:not(.v-btn--disabled) {
+    background: var(--ewo-button) !important;
+    border-color: var(--ewo-primary) !important;
+    color: var(--ewo-on-primary) !important;
+    box-shadow: none;
+    text-transform: none;
+    letter-spacing: .02em;
+  }
+  .ewo-btn-pill {
+    border-radius: 999px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .ewo-card {
+    background: var(--ewo-paper);
+    border: 1px solid var(--ewo-line);
+    border-radius: 16px;
+    overflow: hidden;
+
+    & + .ewo-card {
+      margin-top: 20px;
+    }
+  }
+  .ewo-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--ewo-line);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ewo-ink);
+
+    .v-icon {
+      color: var(--ewo-primary);
+    }
+  }
+  .ewo-card-body {
+    padding: 20px;
+  }
+  .ewo-card-actions {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    border-top: 1px solid var(--ewo-line);
+  }
+  .ewo-card-sub {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ewo-ink);
+    margin-bottom: 10px;
+  }
+  .ewo-hint {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--ewo-muted);
+    margin: 0 0 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .ewo-card > .v-list {
+    background: transparent !important;
+    padding: 6px 12px;
+
+    .v-list-item {
+      padding: 0 8px;
+    }
+    .v-list-item__title {
+      font-size: 12px;
+      color: var(--ewo-muted);
+    }
+    .v-list-item__subtitle {
+      font-size: 14px;
+      color: var(--ewo-ink);
+    }
+    .v-divider {
+      border-color: var(--ewo-line);
+    }
+  }
+  .ewo-edit-btn:not(.v-btn--disabled) {
+    color: var(--ewo-link) !important;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .ewo-provider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--ewo-panel);
+    border: 1px solid var(--ewo-line);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--ewo-ink);
+
+    .v-icon {
+      color: var(--ewo-primary);
+    }
+  }
+
+  .ewo-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ewo-secret {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: rgba(216, 74, 51, .06);
+    border: 1px solid rgba(216, 74, 51, .3);
+    border-radius: 12px;
+
+    .ewo-secret-title {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ewo-link);
+
+      .v-icon {
+        color: var(--ewo-primary);
+        margin-top: 2px;
+      }
+    }
+    .ewo-secret-value {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--ewo-panel);
+      border: 1px solid var(--ewo-line);
+      border-radius: 10px;
+
+      code {
+        flex: 1;
+        min-width: 0;
+        font-family: 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
+        font-size: 12px;
+        color: var(--ewo-ink);
+        background: transparent;
+        box-shadow: none;
+        overflow-wrap: anywhere;
+
+        &::before,
+        &::after {
+          content: none;
+        }
+      }
+      .v-btn {
+        flex-shrink: 0;
+        color: var(--ewo-muted);
+      }
+    }
+  }
+
+  .ewo-connect {
+    margin: 0 0 12px;
+
+    .ewo-connect-row {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--ewo-line);
+
+      &:last-child {
+        border-bottom: 0;
+      }
+    }
+    dt {
+      flex-shrink: 0;
+      width: 72px;
+      font-size: 12px;
+      color: var(--ewo-muted);
+    }
+    dd {
+      margin: 0;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+    code {
+      font-family: 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: var(--ewo-ink);
+      background: transparent;
+      box-shadow: none;
+
+      &::before,
+      &::after {
+        content: none;
+      }
+    }
+    a {
+      color: var(--ewo-link);
+    }
+  }
+
+  .ewo-command {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--ewo-panel);
+    border: 1px solid var(--ewo-line);
+    border-radius: 12px;
+    margin-bottom: 12px;
+
+    pre {
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+      font-family: 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ewo-ink);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .v-btn {
+      flex-shrink: 0;
+      color: var(--ewo-muted);
+    }
+  }
+
+  .ewo-token-list {
+    background: transparent !important;
+    padding: 0;
+
+    .v-list-item {
+      padding: 10px 12px;
+      border: 1px solid var(--ewo-line);
+      border-radius: 12px;
+
+      & + .v-list-item {
+        margin-top: 8px;
+      }
+      &.is-revoked {
+        opacity: .55;
+      }
+    }
+    .v-list-item__title {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--ewo-ink);
+    }
+    .ewo-token-prefix {
+      font-family: 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
+      font-size: 11px;
+      color: var(--ewo-muted);
+      background: transparent;
+      box-shadow: none;
+
+      &::before,
+      &::after {
+        content: none;
+      }
+    }
+    .v-list-item__subtitle {
+      font-size: 12px;
+      color: var(--ewo-muted);
+    }
+    .v-btn:not(.v-btn--disabled) .v-icon {
+      color: var(--ewo-link);
+    }
+  }
+  .ewo-audit-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--ewo-link);
+  }
+
+  .ewo-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+
+    &.ewo-stats-counts {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .ewo-stat-label {
+    font-size: 12px;
+    color: var(--ewo-muted);
+    margin-bottom: 2px;
+  }
+  .ewo-stat-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ewo-ink);
+  }
+
+  .v-input--outlined .v-input__control .v-input__slot {
+    background: var(--ewo-panel);
+  }
+  .v-menu__content .v-card__actions {
+    background: transparent;
+  }
+}
 </style>
