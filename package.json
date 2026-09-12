@@ -40,10 +40,12 @@
     "@azure/storage-blob": "12.29.1",
     "@exlinc/keycloak-passport": "1.0.2",
     "@joplin/turndown-plugin-gfm": "1.0.45",
+    "@modelcontextprotocol/sdk": "1.30.0",
     "@root/csr": "0.8.1",
     "@root/keypairs": "0.10.3",
     "@root/pem": "1.0.4",
     "acme": "3.0.3",
+    "ajv": "6.12.6",
     "akismet-api": "5.3.0",
     "algoliasearch": "4.5.1",
     "apollo-fetch": "0.7.0",
@@ -191,7 +193,8 @@
     "validate.js": "0.13.1",
     "winston": "3.8.2",
     "xss": "1.0.15",
-    "yargs": "17.6.2"
+    "yargs": "17.6.2",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",

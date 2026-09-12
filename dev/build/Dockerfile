@@ -19,6 +19,8 @@ COPY ./.eslintrc.yml ./.eslintrc.yml
 RUN yarn cache clean
 RUN yarn --frozen-lockfile --non-interactive
 RUN yarn build
+COPY ./mcp ./mcp
+RUN cd /wiki/mcp && npm pack --pack-destination /wiki/assets
 RUN rm -rf /wiki/node_modules
 RUN yarn --production --frozen-lockfile --non-interactive
 RUN yarn patch-package

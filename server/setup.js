@@ -247,11 +247,29 @@ module.exports = () => {
         name: 'Guests',
         permissions: JSON.stringify(['read:pages', 'read:assets', 'read:comments']),
         pageRules: JSON.stringify([
-          { id: 'guest', roles: ['read:pages', 'read:assets', 'read:comments'], match: 'START', deny: false, path: '', locales: [] }
+          { id: 'public', roles: ['read:pages', 'read:assets'], match: 'START', deny: false, path: 'public/', locales: [] }
         ]),
         isSystem: true
       })
-      if (adminGroup.id !== 1 || guestGroup.id !== 2) {
+      const publisherGroup = await WIKI.models.groups.query().insert({
+        name: 'Material Publisher',
+        permissions: JSON.stringify(['read:pages', 'read:source', 'read:history', 'read:assets', 'write:pages', 'write:assets', 'manage:pages']),
+        pageRules: JSON.stringify([
+          { id: 'team', roles: ['read:pages', 'read:source', 'read:history', 'read:assets', 'write:pages', 'write:assets', 'manage:pages'], match: 'START', deny: false, path: 'team/', locales: [] },
+          { id: 'public', roles: ['read:pages', 'read:source', 'read:assets', 'write:pages', 'write:assets', 'manage:pages'], match: 'START', deny: false, path: 'public/', locales: [] }
+        ]),
+        isSystem: false
+      })
+      const teamGroup = await WIKI.models.groups.query().insert({
+        name: 'Team Members',
+        permissions: JSON.stringify(['read:pages', 'read:source', 'read:history', 'read:assets', 'write:pages', 'write:assets']),
+        pageRules: JSON.stringify([
+          { id: 'team', roles: ['read:pages', 'read:source', 'read:history', 'read:assets', 'write:pages', 'write:assets'], match: 'START', deny: false, path: 'team/', locales: [] },
+          { id: 'public', roles: ['read:pages', 'read:source', 'read:assets', 'write:pages', 'write:assets'], match: 'START', deny: false, path: 'public/', locales: [] }
+        ]),
+        isSystem: false
+      })
+      if (adminGroup.id !== 1 || guestGroup.id !== 2 || publisherGroup.id !== 3 || teamGroup.id !== 4) {
         throw new Error('Incorrect groups auto-increment configuration! Should start at 0 and increment by 1. Contact your database administrator.')
       }
 
@@ -261,8 +279,8 @@ module.exports = () => {
         config: {},
         selfRegistration: false,
         isEnabled: true,
-        domainWhitelist: {v: []},
-        autoEnrollGroups: {v: []},
+        domainWhitelist: {v: ['ewo.so']},
+        autoEnrollGroups: {v: [teamGroup.id]},
         order: 0,
         strategyKey: 'local',
         displayName: 'Local'

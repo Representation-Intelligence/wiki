@@ -101,6 +101,7 @@ type PageMutation {
   ): PageResponse @auth(requires: ["write:pages", "manage:pages", "manage:system"])
 
   update(
+    expectedRevision: String
     id: Int!
     content: String
     description: String

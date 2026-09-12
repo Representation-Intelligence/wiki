@@ -119,26 +119,17 @@ module.exports = class Asset extends Model {
     try {
       const fileBuffer = await fs.readFile(opts.path)
 
-      if (asset) {
-        // Patch existing asset
-        if (opts.mode === 'upload') {
-          assetRow.authorId = opts.user.id
+      await WIKI.models.knex.transaction(async transaction => {
+        if (opts.mode === 'upload' || !asset) assetRow.authorId = opts.user.id
+        if (asset) {
+          await WIKI.models.assets.query(transaction).patch(assetRow).findById(asset.id)
+        } else {
+          asset = await WIKI.models.assets.query(transaction).insert(assetRow)
         }
-        await WIKI.models.assets.query().patch(assetRow).findById(asset.id)
-        await WIKI.models.knex('assetData').where({
-          id: asset.id
-        }).update({
-          data: fileBuffer
-        })
-      } else {
-        // Create asset entry
-        assetRow.authorId = opts.user.id
-        asset = await WIKI.models.assets.query().insert(assetRow)
-        await WIKI.models.knex('assetData').insert({
-          id: asset.id,
-          data: fileBuffer
-        })
-      }
+        const existingData = await transaction('assetData').where('id', asset.id).first()
+        if (existingData) await transaction('assetData').where('id', asset.id).update({ data: fileBuffer })
+        else await transaction('assetData').insert({ id: asset.id, data: fileBuffer })
+      })
 
       // Move temp upload to cache
       if (opts.mode === 'upload') {
@@ -163,7 +154,9 @@ module.exports = class Asset extends Model {
       }
     } catch (err) {
       WIKI.logger.warn(err)
+      throw err
     }
+    return asset
   }
 
   static async getAsset(assetPath, res) {

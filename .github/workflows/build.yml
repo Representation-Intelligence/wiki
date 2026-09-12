@@ -148,10 +148,53 @@ jobs:
           dev/cypress/videos
         if-no-files-found: ignore
 
+  mcp-acceptance:
+    name: MCP PostgreSQL acceptance
+    runs-on: ubuntu-latest
+    needs: [build]
+    permissions:
+      packages: read
+      contents: read
+    steps:
+    - uses: actions/checkout@v6
+    - name: Set test version
+      run: |
+        if [[ "$GITHUB_REF" =~ ^refs/tags/v* ]]; then
+          echo "REL_VERSION_STRICT=${GITHUB_REF_NAME#?}" >> $GITHUB_ENV
+        else
+          echo "REL_VERSION_STRICT=$BASE_DEV_VERSION-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+        fi
+    - uses: docker/login-action@v4
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Verify member keys and native publishing
+      env:
+        MATRIXENV: postgres
+      run: |
+        bash dev/cypress/ci-setup.sh
+        docker exec wiki mkdir -p /wiki/dev/mcp /wiki/mcp
+        docker cp dev/mcp/. wiki:/wiki/dev/mcp/
+        docker cp mcp/. wiki:/wiki/mcp/
+        docker exec -e TEST_WIKI_URL=http://127.0.0.1:3000 -e TEST_REPORT=/tmp/mcp-results.json wiki node dev/mcp/acceptance.mjs
+    - name: Collect result
+      if: always()
+      run: |
+        docker cp wiki:/tmp/mcp-results.json ./mcp-results.json || true
+        docker logs wiki > mcp-server.log 2>&1 || true
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: mcp-postgresql-evidence
+        path: |
+          mcp-results.json
+          mcp-server.log
+
   arm:
     name: ARM Build
     runs-on: ubuntu-24.04-arm
-    needs: [cypress]
+    needs: [cypress, mcp-acceptance]
     permissions:
       packages: write
 
@@ -208,7 +251,7 @@ jobs:
   windows:
     name: Windows Build
     runs-on: windows-latest
-    needs: [cypress]
+    needs: [cypress, mcp-acceptance]
 
     steps:
     - name: Setup Node.js environment

@@ -97,3 +97,24 @@ describe('ewo knowledge workspace', () => {
     cy.get('.contents').should('contain', 'A shared guide for the team.')
   })
 })
+
+// A real browser confirms that members can issue a Key from the profile UI.
+describe('MCP account settings', () => {
+  it('shows a Key once, reloads metadata and revokes it', () => {
+    cy.viewport(1280, 900)
+    cy.visit('/login')
+    cy.get('.login-form input[type=email]').type('test@example.com')
+    cy.get('.login-form input[type=password]').type('12345678', { log: false })
+    cy.get('.login-form > button').click()
+    cy.location('pathname', { timeout: 30000 }).should('not.eq', '/login')
+    cy.visit('/p/profile')
+    cy.contains('AI 连接 / 个人 Key').should('be.visible')
+    cy.get('[data-cy=mcp-create-key]').click()
+    cy.get('[data-cy=mcp-secret]').should('be.visible')
+    cy.reload()
+    cy.get('[data-cy=mcp-secret]').should('not.exist')
+    cy.get('[data-cy=mcp-revoke-key]').first().should('not.be.disabled').click()
+    cy.get('[data-cy=mcp-revoke-key]').first().should('be.disabled')
+    cy.screenshot('mcp-profile-key-revoked')
+  })
+})

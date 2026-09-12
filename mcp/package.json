@@ -1,0 +1,21 @@
+{
+  "name": "@representation-intelligence/wiki-mcp",
+  "version": "1.0.0",
+  "description": "Local stdio MCP client for ewo Wiki",
+  "type": "module",
+  "bin": {
+    "ewo-wiki-mcp": "server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.5.4"
+  },
+  "files": [
+    "server.mjs",
+    "README.md"
+  ]
+}

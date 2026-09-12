@@ -91,6 +91,7 @@ module.exports = async () => {
   // GraphQL Server
   // ----------------------------------------
 
+  app.use('/mcp', bodyParser.json({ limit: '8mb' }))
   app.use(bodyParser.json({ limit: WIKI.config.bodyParserLimit || '1mb' }))
   await WIKI.servers.startGraphQL()
 
@@ -163,6 +164,7 @@ module.exports = async () => {
   })
 
   app.use('/', ctrl.auth)
+  app.use('/', ctrl.mcp)
   app.use('/', ctrl.upload)
   app.use('/', ctrl.common)
 

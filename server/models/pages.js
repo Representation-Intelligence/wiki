@@ -262,6 +262,7 @@ module.exports = class Page extends Model {
       throw new WIKI.Error.PageDeleteForbidden()
     }
 
+    if (opts.path.startsWith('public/') && !opts.humanReview) opts.isPublished = false
     // -> Check for duplicate
     const dupCheck = await WIKI.models.pages.query().select('id').where('localeCode', opts.locale).where('path', opts.path).first()
     if (dupCheck) {
@@ -296,38 +297,39 @@ module.exports = class Page extends Model {
     }
 
     // -> Create page
-    await WIKI.models.pages.query().insert({
-      authorId: opts.user.id,
-      content: opts.content,
-      creatorId: opts.user.id,
-      contentType: _.get(_.find(WIKI.data.editors, ['key', opts.editor]), `contentType`, 'text'),
-      description: opts.description,
-      editorKey: opts.editor,
-      hash: pageHelper.generateHash({ path: opts.path, locale: opts.locale, privateNS: opts.isPrivate ? 'TODO' : '' }),
-      isPrivate: opts.isPrivate,
-      isPublished: opts.isPublished,
-      localeCode: opts.locale,
-      path: opts.path,
-      publishEndDate: opts.publishEndDate || '',
-      publishStartDate: opts.publishStartDate || '',
-      title: opts.title,
-      toc: '[]',
-      extra: JSON.stringify({
-        js: scriptJs,
-        css: scriptCss
+    const pageId = await WIKI.models.knex.transaction(async transaction => {
+      const inserted = await WIKI.models.pages.query(transaction).insert({
+        authorId: opts.user.id,
+        content: opts.content,
+        creatorId: opts.user.id,
+        contentType: _.get(_.find(WIKI.data.editors, ['key', opts.editor]), `contentType`, 'text'),
+        description: opts.description,
+        editorKey: opts.editor,
+        hash: pageHelper.generateHash({ path: opts.path, locale: opts.locale, privateNS: opts.isPrivate ? 'TODO' : '' }),
+        isPrivate: opts.isPrivate,
+        isPublished: opts.isPublished,
+        localeCode: opts.locale,
+        path: opts.path,
+        publishEndDate: opts.publishEndDate || '',
+        publishStartDate: opts.publishStartDate || '',
+        title: opts.title,
+        toc: '[]',
+        extra: JSON.stringify({
+          ...(typeof opts.extra === 'string' ? (() => { try { return JSON.parse(opts.extra) } catch { return {} } })() : (opts.extra || {})),
+          js: scriptJs,
+          css: scriptCss
+        })
       })
-    })
-    const page = await WIKI.models.pages.getPageFromDb({
-      path: opts.path,
-      locale: opts.locale,
-      userId: opts.user.id,
-      isPrivate: opts.isPrivate
-    })
+      const page = inserted
+      // -> Save Tags
+      if (opts.tags && opts.tags.length > 0) {
+        await WIKI.models.tags.associateTags({ tags: opts.tags, page, transaction })
+      }
 
-    // -> Save Tags
-    if (opts.tags && opts.tags.length > 0) {
-      await WIKI.models.tags.associateTags({ tags: opts.tags, page })
-    }
+      if (opts.onPersist) await opts.onPersist(transaction, page)
+      return page.id
+    })
+    const page = await WIKI.models.pages.getPageFromDb(pageId)
 
     // -> Render page to HTML
     await WIKI.models.pages.renderPage(page)
@@ -368,79 +370,99 @@ module.exports = class Page extends Model {
    * @returns {Promise} Promise of the Page Model Instance
    */
   static async updatePage(opts) {
-    // -> Fetch original page
-    const ogPage = await WIKI.models.pages.query().findById(opts.id)
-    if (!ogPage) {
-      throw new Error('Invalid Page Id')
-    }
-
-    // -> Check for page access
-    if (!WIKI.auth.checkAccess(opts.user, ['write:pages'], {
-      locale: ogPage.localeCode,
-      path: ogPage.path
-    })) {
-      throw new WIKI.Error.PageUpdateForbidden()
-    }
-
-    // -> Check for empty content
-    if (!opts.content || _.trim(opts.content).length < 1) {
-      throw new WIKI.Error.PageEmptyContent()
-    }
-
-    // -> Create version snapshot
-    await WIKI.models.pageHistory.addVersion({
-      ...ogPage,
-      isPublished: ogPage.isPublished === true || ogPage.isPublished === 1,
-      action: opts.action ? opts.action : 'updated',
-      versionDate: ogPage.updatedAt
-    })
-
-    // -> Format Extra Properties
-    if (!_.isPlainObject(ogPage.extra)) {
-      ogPage.extra = {}
-    }
-
-    // -> Format CSS Scripts
-    let scriptCss = _.get(ogPage, 'extra.css', '')
-    if (WIKI.auth.checkAccess(opts.user, ['write:styles'], {
-      locale: opts.locale,
-      path: opts.path
-    })) {
-      if (!_.isEmpty(opts.scriptCss)) {
-        scriptCss = new CleanCSS({ inline: false }).minify(opts.scriptCss).styles
-      } else {
-        scriptCss = ''
+    const pageId = await WIKI.models.knex.transaction(async transaction => {
+      const query = WIKI.models.pages.query(transaction).findById(opts.id)
+      if (WIKI.config.db.type !== 'sqlite') query.forUpdate()
+      const ogPage = await query
+      if (!ogPage) {
+        throw new Error('Invalid Page Id')
       }
-    }
 
-    // -> Format JS Scripts
-    let scriptJs = _.get(ogPage, 'extra.js', '')
-    if (WIKI.auth.checkAccess(opts.user, ['write:scripts'], {
-      locale: opts.locale,
-      path: opts.path
-    })) {
-      scriptJs = opts.scriptJs || ''
-    }
+      if (opts.expectedRevision && ogPage.updatedAt !== opts.expectedRevision) {
+        const err = new Error('版本冲突，请重新读取页面')
+        err.publicCode = 'REVISION_CONFLICT'
+        throw err
+      }
+      const currentTags = await ogPage.$relatedQuery('tags', transaction)
+      opts = { ...opts }
+      for (const field of ['content', 'description', 'title', 'isPublished', 'publishStartDate', 'publishEndDate']) {
+        if (opts[field] === undefined || opts[field] === null) opts[field] = ogPage[field]
+      }
+      if (opts.tags === undefined || opts.tags === null) opts.tags = currentTags.map(t => t.tag)
+      if (!Array.isArray(opts.tags) || opts.tags.some(t => typeof t !== 'string' || t.length > 100)) throw new Error('Invalid tags')
+      if (ogPage.path.startsWith('public/') && !opts.humanReview) opts.isPublished = false
+      // -> Check for page access
+      if (!WIKI.auth.checkAccess(opts.user, ['write:pages'], {
+        locale: ogPage.localeCode,
+        path: ogPage.path
+      })) {
+        throw new WIKI.Error.PageUpdateForbidden()
+      }
 
-    // -> Update page
-    await WIKI.models.pages.query().patch({
-      authorId: opts.user.id,
-      content: opts.content,
-      description: opts.description,
-      isPublished: opts.isPublished === true || opts.isPublished === 1,
-      publishEndDate: opts.publishEndDate || '',
-      publishStartDate: opts.publishStartDate || '',
-      title: opts.title,
-      extra: JSON.stringify({
-        ...ogPage.extra,
-        js: scriptJs,
-        css: scriptCss
-      })
-    }).where('id', ogPage.id)
-    let page = await WIKI.models.pages.getPageFromDb(ogPage.id)
+      // -> Check for empty content
+      if (!opts.content || _.trim(opts.content).length < 1) {
+        throw new WIKI.Error.PageEmptyContent()
+      }
 
-    // -> Save Tags
-    await WIKI.models.tags.associateTags({ tags: opts.tags, page })
+      // -> Create version snapshot
+      await WIKI.models.pageHistory.addVersion({
+        ...ogPage,
+        isPublished: ogPage.isPublished === true || ogPage.isPublished === 1,
+        action: opts.action ? opts.action : 'updated',
+        versionDate: ogPage.updatedAt
+      }, transaction)
+
+      // -> Format Extra Properties
+      if (!_.isPlainObject(ogPage.extra)) {
+        ogPage.extra = {}
+      }
+
+      // -> Format CSS Scripts
+      let scriptCss = _.get(ogPage, 'extra.css', '')
+      if (WIKI.auth.checkAccess(opts.user, ['write:styles'], {
+        locale: opts.locale,
+        path: opts.path
+      })) {
+        if (!_.isEmpty(opts.scriptCss)) {
+          scriptCss = new CleanCSS({ inline: false }).minify(opts.scriptCss).styles
+        } else {
+          scriptCss = ''
+        }
+      }
+
+      // -> Format JS Scripts
+      let scriptJs = _.get(ogPage, 'extra.js', '')
+      if (WIKI.auth.checkAccess(opts.user, ['write:scripts'], {
+        locale: opts.locale,
+        path: opts.path
+      })) {
+        scriptJs = opts.scriptJs || ''
+      }
+
+      // -> Update page
+      await WIKI.models.pages.query(transaction).patch({
+        authorId: opts.user.id,
+        content: opts.content,
+        description: opts.description,
+        isPublished: opts.isPublished === true || opts.isPublished === 1,
+        publishEndDate: opts.publishEndDate || '',
+        publishStartDate: opts.publishStartDate || '',
+        title: opts.title,
+        extra: JSON.stringify({
+          ...ogPage.extra,
+          js: scriptJs,
+          css: scriptCss
+        })
+      }).where('id', ogPage.id)
+      let page = await WIKI.models.pages.getPageFromDb(ogPage.id, transaction)
+
+      // -> Save Tags
+      await WIKI.models.tags.associateTags({ tags: opts.tags, page, transaction })
+
+      if (opts.onPersist) await opts.onPersist(transaction, page)
+      return ogPage.id
+    })
+    let page = await WIKI.models.pages.getPageFromDb(pageId)
 
     // -> Render page to HTML
     await WIKI.models.pages.renderPage(page)
@@ -950,6 +972,7 @@ module.exports = class Page extends Model {
    * @returns {Promise} Promise of the Page Model Instance
    */
   static async getPage(opts) {
+    if (/^(team|public)\//.test(opts.path)) return WIKI.models.pages.getPageFromDb(opts)
     // -> Get from cache first
     let page = await WIKI.models.pages.getPageFromCache(opts)
     if (!page) {
@@ -974,10 +997,10 @@ module.exports = class Page extends Model {
    * @param {Object} opts Page Properties
    * @returns {Promise} Promise of the Page Model Instance
    */
-  static async getPageFromDb(opts) {
+  static async getPageFromDb(opts, transaction) {
     const queryModeID = _.isNumber(opts)
     try {
-      return WIKI.models.pages.query()
+      return WIKI.models.pages.query(transaction)
         .column([
           'pages.id',
           'pages.path',

@@ -111,8 +111,18 @@ module.exports = {
    * @param {Express Next Callback} next
    */
   authenticate (req, res, next) {
+    const bearer = (req.get('authorization') || '').match(/^Bearer (ewt_[^ ]+)$/i)
+    if (bearer) {
+      if (req.path !== '/mcp') return res.status(403).json({ error: 'MCP_KEY_ENDPOINT_ONLY' })
+      return WIKI.models.personalTokens.authenticate(bearer[1]).then(identity => {
+        if (!identity) return res.status(401).set('WWW-Authenticate', 'Bearer realm="ewo-wiki-mcp"').json({ error: 'INVALID_MCP_KEY' })
+        req.user = identity.user
+        req.mcpToken = identity.row
+        next()
+      }).catch(next)
+    }
     WIKI.auth.passport.authenticate('jwt', {session: false}, async (err, user, info) => {
-      if (err) { return next() }
+      if (err) { return next(err) }
       let mustRevalidate = false
 
       // Expired but still valid within N days, just renew
