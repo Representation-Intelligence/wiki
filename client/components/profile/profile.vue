@@ -756,7 +756,7 @@ export default {
       this.tokenLoading = true
       try {
         const result = await this.$apollo.mutate({
-          mutation: gql`mutation ($name: String!, $expiresIn: String, $scopes: [String!]) { authentication { createPersonalToken(name: $name, expiresIn: $expiresIn, scopes: $scopes) { responseResult { succeeded message } token tokenInfo { id name tokenPrefix expiresAt } } } }`,
+          mutation: gql`mutation ($name: String!, $expiresIn: String, $scopes: [String!]) { authentication { createPersonalToken(name: $name, expiresIn: $expiresIn, scopes: $scopes) { responseResult { succeeded message } token tokenInfo { id name tokenPrefix expiresAt scopes } } } }`,
           context: { headers: { 'x-ewo-mcp-ui': '1' } },
           variables: { name: this.tokenName, expiresIn: this.tokenExpiresIn, scopes: this.tokenMode === 'read' ? ['wiki:read'] : ['wiki:read', 'wiki:create', 'wiki:update', 'wiki:upload', 'wiki:publish:team'] }
         })
