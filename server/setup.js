@@ -247,7 +247,7 @@ module.exports = () => {
         name: 'Guests',
         permissions: JSON.stringify(['read:pages', 'read:assets', 'read:comments']),
         pageRules: JSON.stringify([
-          { id: 'guest', roles: ['read:pages', 'read:assets', 'read:comments'], match: 'START', deny: false, path: '', locales: [] }
+          { id: 'public', roles: ['read:pages', 'read:assets'], match: 'START', deny: false, path: 'public/', locales: [] }
         ]),
         isSystem: true
       })
@@ -277,7 +277,7 @@ module.exports = () => {
       await WIKI.models.authentication.query().insert({
         key: 'local',
         config: {},
-        selfRegistration: true,
+        selfRegistration: false,
         isEnabled: true,
         domainWhitelist: {v: ['ewo.so']},
         autoEnrollGroups: {v: [teamGroup.id]},

@@ -396,6 +396,7 @@ export default {
           let resp = await this.$apollo.mutate({
             mutation: gql`
               mutation (
+                $expectedRevision: String
                 $id: Int!
                 $content: String
                 $description: String
@@ -413,6 +414,7 @@ export default {
               ) {
                 pages {
                   update(
+                    expectedRevision: $expectedRevision
                     id: $id
                     content: $content
                     description: $description
@@ -442,6 +444,7 @@ export default {
               }
             `,
             variables: {
+              expectedRevision: this.checkoutDateActive,
               id: this.$store.get('page/id'),
               content: this.$store.get('editor/content'),
               description: this.$store.get('page/description'),

@@ -32,7 +32,7 @@ type AuthenticationQuery {
 # -----------------------------------------------
 
 type AuthenticationMutation {
-  createPersonalToken(name: String!, expiresIn: String): PersonalTokenCreateResponse
+  createPersonalToken(name: String!, expiresIn: String, scopes: [String!]): PersonalTokenCreateResponse
   revokePersonalToken(id: Int!): DefaultResponse
   createApiKey(
     name: String!

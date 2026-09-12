@@ -163,31 +163,38 @@
                   autocomplete='off'
                   hide-details
                   )
-            v-card-chin(v-if='user.providerKey === `local`')
+          v-card-chin(v-if='user.providerKey === `local`')
             v-spacer
             v-btn.px-4(color='purple darken-4', dark, depressed, :loading='changePassLoading', type='submit', form='change-password-form')
               v-icon(left) mdi-progress-check
               span {{$t('profile:auth.changePassword')}}
         v-card.mt-3.animated.fadeInUp.wait-p3s
           v-toolbar(color='indigo', dark, dense, flat)
-            v-toolbar-title.subtitle-1 MCP access
+            v-toolbar-title.subtitle-1 AI 连接 / 个人 Key
           v-card-text
-            p.caption.grey--text.text--darken-1 Create a personal token for your AI tools. The full token is shown once.
-            v-text-field(v-model='tokenName', label='Token name', outlined, dense, hide-details='auto')
-            v-select(v-model='tokenExpiresIn', :items='tokenExpiryOptions', label='Expires in', outlined, dense)
+            p.caption.grey--text.text--darken-1 为自己的 AI 创建 Key。权限受账号本身权限限制；公开内容始终需要网页人工确认。
+            v-text-field(v-model='tokenName', label='名称，例如工作电脑上的 AI', outlined, dense, hide-details='auto')
+            v-select(v-model='tokenMode', :items='[{text: `只读`, value: `read`}, {text: `阅读和贡献`, value: `write`}]', label='权限', outlined, dense)
+            v-select(v-model='tokenExpiresIn', :items='tokenExpiryOptions', label='有效期', outlined, dense)
             v-btn(color='indigo', dark, depressed, :loading='tokenLoading', @click='createMcpToken')
               v-icon(left) mdi-key-plus
-              span Create token
+              span 创建 Key
             v-alert(v-if='newToken', type='warning', dense, outlined, class='mt-3')
-              div.subtitle-2 Copy this token now. It will not be shown again.
+              div.subtitle-2 请立即保存，仅显示这一次。不要将 Key 粘贴到聊天内容或代码仓库。
               code {{ newToken }}
+            p: a(href='/mcp-audit') 查看 AI 操作记录
+            p.mt-3 接入地址：https://wiki.representation.com.cn/mcp
+            p 本地客户端可下载或通过 npx 使用：
+            a(href='/_assets/representation-intelligence-wiki-mcp-1.0.0.tgz') 下载 MCP 客户端包
+            pre(style='white-space:pre-wrap;font-size:12px') npx --yes --package=https://wiki.representation.com.cn/_assets/representation-intelligence-wiki-mcp-1.0.0.tgz ewo-wiki-mcp
+            p.caption 将 Key 放入客户端的 EWO_WIKI_TOKEN 环境变量；请勿放在聊天消息或命令行参数中。
             v-list(two-line, dense, class='mt-2')
               v-list-item(v-for='token of mcpTokens', :key='token.id')
                 v-list-item-content
                   v-list-item-title {{ token.name }} ({{ token.tokenPrefix }}…)
-                  v-list-item-subtitle Expires {{ token.expiresAt | moment('L') }}
+                  v-list-item-subtitle {{ token.revokedAt ? `已撤销 · 到期 ` : `到期 ` }}{{ token.expiresAt | moment('L') }}
                 v-list-item-action
-                  v-btn(icon, small, @click='revokeMcpToken(token.id)')
+                  v-btn(icon, small, :disabled='!!token.revokedAt', :aria-label='token.revokedAt ? `已撤销` : `撤销 Key`', @click='revokeMcpToken(token.id)')
                     v-icon(color='error') mdi-key-remove
       v-flex(lg6 xs12)
         //- v-card
@@ -402,7 +409,8 @@ export default {
       currentPass: '',
       newPass: '',
       verifyPass: '',
-      tokenName: 'AI client',
+      tokenName: '我的 AI',
+      tokenMode: 'write',
       tokenExpiresIn: '90d',
       tokenExpiryOptions: ['30d', '90d', '180d', '365d'],
       tokenLoading: false,
@@ -743,8 +751,9 @@ export default {
       this.tokenLoading = true
       try {
         const result = await this.$apollo.mutate({
-          mutation: gql`mutation ($name: String!, $expiresIn: String) { authentication { createPersonalToken(name: $name, expiresIn: $expiresIn) { responseResult { succeeded message } token tokenInfo { id name tokenPrefix expiresAt } } } }`,
-          variables: { name: this.tokenName, expiresIn: this.tokenExpiresIn }
+          mutation: gql`mutation ($name: String!, $expiresIn: String, $scopes: [String!]) { authentication { createPersonalToken(name: $name, expiresIn: $expiresIn, scopes: $scopes) { responseResult { succeeded message } token tokenInfo { id name tokenPrefix expiresAt } } } }`,
+          context: { headers: { 'x-ewo-mcp-ui': '1' } },
+          variables: { name: this.tokenName, expiresIn: this.tokenExpiresIn, scopes: this.tokenMode === 'read' ? ['wiki:read'] : ['wiki:read', 'wiki:create', 'wiki:update', 'wiki:upload', 'wiki:publish:team'] }
         })
         const response = _.get(result, 'data.authentication.createPersonalToken', {})
         if (!response.responseResult.succeeded) throw new Error(response.responseResult.message)
@@ -757,6 +766,7 @@ export default {
       try {
         const result = await this.$apollo.mutate({
           mutation: gql`mutation ($id: Int!) { authentication { revokePersonalToken(id: $id) { responseResult { succeeded message } } } }`,
+          context: { headers: { 'x-ewo-mcp-ui': '1' } },
           variables: { id }
         })
         const response = _.get(result, 'data.authentication.revokePersonalToken.responseResult', {})

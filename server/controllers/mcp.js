@@ -1,172 +1,104 @@
 /* global WIKI */
-
 const express = require('express')
 const crypto = require('crypto')
-const fs = require('fs-extra')
-const os = require('os')
-const path = require('path')
-const _ = require('lodash')
+const Ajv = require('ajv')
+const { Server } = require('@modelcontextprotocol/sdk/server/index.js')
+const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js')
+const { ListToolsRequestSchema, CallToolRequestSchema } = require('@modelcontextprotocol/sdk/types.js')
+const policy = require('../mcp/policy')
+const content = require('../mcp/content')
+const tools = require('../mcp/tools')
 const router = express.Router()
-
-const tools = [
-  { name: 'wiki_get_identity', description: '返回当前成员身份和 MCP 权限', inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
-  { name: 'wiki_list_projects', description: '列出当前可见项目目录', inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
-  { name: 'wiki_search_posts', description: '搜索当前成员有权访问的 Post', inputSchema: { type: 'object', properties: { query: { type: 'string' }, tags: { type: 'array', items: { type: 'string' } }, project: { type: 'string' } }, required: ['query'], additionalProperties: false } },
-  { name: 'wiki_get_post', description: '读取一个 Post 的正文和元数据', inputSchema: { type: 'object', properties: { postId: { type: 'integer' } }, required: ['postId'], additionalProperties: false } },
-  { name: 'wiki_create_post', description: '创建 Post；team 可直接发布，public 默认只能创建草稿', inputSchema: { type: 'object', properties: { title: { type: 'string', minLength: 1, maxLength: 200 }, content: { type: 'string', minLength: 1, maxLength: 1000000 }, visibility: { type: 'string', enum: ['team', 'public'] }, tags: { type: 'array', items: { type: 'string', maxLength: 50 }, maxItems: 20 }, project: { type: 'string', maxLength: 80 }, publish: { type: 'boolean' }, idempotencyKey: { type: 'string', minLength: 8, maxLength: 100 } }, required: ['title', 'content', 'visibility', 'idempotencyKey'], additionalProperties: false } },
-  { name: 'wiki_update_post', description: '更新 Post；必须提供 expectedRevision 防止覆盖他人修改', inputSchema: { type: 'object', properties: { postId: { type: 'integer' }, title: { type: 'string', maxLength: 200 }, content: { type: 'string', maxLength: 1000000 }, tags: { type: 'array', items: { type: 'string', maxLength: 50 }, maxItems: 20 }, publish: { type: 'boolean' }, expectedRevision: { type: 'string' } }, required: ['postId', 'expectedRevision'], additionalProperties: false } },
-  { name: 'wiki_publish_post', description: '发布 team Post；public 需要 wiki:publish:public', inputSchema: { type: 'object', properties: { postId: { type: 'integer' }, expectedRevision: { type: 'string' } }, required: ['postId', 'expectedRevision'], additionalProperties: false } },
-  { name: 'wiki_upload_attachment', description: '上传并校验 Post 附件', inputSchema: { type: 'object', properties: { postId: { type: 'integer' }, filename: { type: 'string', maxLength: 160 }, mime: { type: 'string', maxLength: 100 }, dataBase64: { type: 'string', maxLength: 7000000 }, sha256: { type: 'string', pattern: '^[a-f0-9]{64}$' } }, required: ['postId', 'filename', 'mime', 'dataBase64', 'sha256'], additionalProperties: false } }
-]
-
-function error (code, message) {
-  return { code, message }
+const ajv = new Ajv({ useDefaults: true, allErrors: true })
+const validators = new Map(tools.map(t => [t.name, ajv.compile(t.inputSchema)]))
+const rates = new Map()
+const escape = text => String(text == null ? '' : text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+function html (title, body) {
+  return `<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title)} | ewo Wiki</title><style>body{font:16px/1.7 system-ui;background:#f8f7f3;color:#292723;margin:0}main{max-width:960px;padding:28px 24px 80px;margin:auto}nav{display:flex;gap:24px;border-bottom:1px solid #ddd;padding:12px 0 24px;margin-bottom:32px}a{color:#af4717;text-decoration:none}h1{font-size:32px}article{background:#fff;padding:22px;margin:18px 0;border:1px solid #e5e2da;border-radius:12px}small,.muted{color:#777}button{background:#c95320;color:white;border:0;border-radius:6px;padding:10px 18px;cursor:pointer}input{padding:10px;border:1px solid #ccc;border-radius:6px;font:inherit}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#fafafa;padding:16px}label{display:block;margin:14px 0}code{overflow-wrap:anywhere}@media(prefers-color-scheme:dark){body{background:#211f1b;color:#e5e2da}article,pre{background:#292723;border-color:#555}a{color:#ffa779}}</style><main><nav><b>ewo Wiki</b><a href="/home">全部内容</a><a href="/profile">个人设置 / MCP Key</a></nav>${body}</main></html>`
 }
-
-function scope (req, wanted) {
-  if (req.user && req.user.permissions && req.user.permissions.includes('manage:system')) return true
-  return tokenScopes(req).includes(wanted)
-}
-
-function tokenScopes (req) {
-  if (!req.mcpToken) return []
-  if (Array.isArray(req.mcpToken.scopes)) return req.mcpToken.scopes
-  if (typeof req.mcpToken.scopes === 'string' && req.mcpToken.scopes.startsWith('[')) return JSON.parse(req.mcpToken.scopes)
-  return typeof req.mcpToken.scopes === 'string' ? req.mcpToken.scopes.split(',').filter(Boolean) : []
-}
-
-function requireScope (req, wanted) {
-  if (!scope(req, wanted)) throw error(-32003, `缺少权限 ${wanted}`)
-}
-
-function slugify (value) {
-  const slug = value.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80)
-  return slug || `post-${crypto.randomBytes(5).toString('hex')}`
-}
-
-function pagePath ({ title, visibility, project }) {
-  const prefix = visibility === 'public' ? 'public' : 'team'
-  const base = project ? `projects/${slugify(project)}` : 'posts'
-  return `${prefix}/${base}/${slugify(title)}`
-}
-
-function readExtra (page) {
-  try { return typeof page.extra === 'string' ? JSON.parse(page.extra) : (page.extra || {}) } catch { return {} }
-}
-
-function publicPage (page) {
-  const extra = readExtra(page)
-  return { id: page.id, path: page.path.replace(/^(public|team)\//, ''), url: `/${page.path}`, title: page.title, description: page.description, content: page.content, tags: (page.tags || []).map(t => t.tag || t), visibility: extra.visibility || (page.path.startsWith('public/') ? 'public' : 'team'), project: extra.project || null, isPublished: page.isPublished, revision: page.updatedAt, authorId: page.authorId, creatorId: page.creatorId }
-}
-
-async function findVisiblePage (req, id, writable = false) {
-  const page = await WIKI.models.pages.getPageFromDb(id)
-  if (!page) throw error(-32004, '页面不存在')
-  const needed = writable ? 'write:pages' : 'read:pages'
-  if (!WIKI.auth.checkAccess(req.user, [needed], { path: page.path, locale: page.localeCode })) throw error(-32003, '无权访问此页面')
-  return page
-}
-
-async function dispatch (req, name, args) {
-  if (!req.mcpToken && !(req.user && req.user.permissions && req.user.permissions.includes('manage:system'))) throw error(-32001, '需要 MCP Token')
-  switch (name) {
-    case 'wiki_get_identity':
-      requireScope(req, 'wiki:read')
-      return { userId: req.user.id, email: req.user.email, name: req.user.name, scopes: tokenScopes(req) }
-    case 'wiki_list_projects': {
-      requireScope(req, 'wiki:read')
-      const pages = await WIKI.models.pages.query().where('localeCode', WIKI.config.lang.code).where('isPublished', true)
-      const projects = _.uniq(pages.filter(p => WIKI.auth.checkAccess(req.user, ['read:pages'], { path: p.path, locale: p.localeCode })).map(p => p.path.match(/^(?:public|team)\/projects\/([^/]+)/)?.[1]).filter(Boolean))
-      return projects.map(slug => ({ slug, path: `projects/${slug}` }))
+function uiError (res, err) { return res.status(err.publicCode === 'UNAUTHORIZED' ? 401 : 400).type('html').send(html('操作未完成', `<h1>操作未完成</h1><p>${escape(err.publicCode ? err.message : '请求暂时无法完成，请重新读取后再试。')}</p>`)) }
+function context (user, token) { return { user, scopes: token.scopes, tokenId: token.id, requestId: crypto.randomUUID() } }
+router.all('/mcp', async (req, res, next) => {
+  res.set('Cache-Control', 'no-store')
+  if (req.get('origin') && req.get('origin') !== new URL(WIKI.config.host).origin) return res.status(403).json({ error: 'INVALID_ORIGIN' })
+  if (!req.mcpToken) return res.status(401).set('WWW-Authenticate', 'Bearer realm="ewo-wiki-mcp"').json({ error: 'MCP_KEY_REQUIRED' })
+  const key = req.mcpToken.id
+  const now = Date.now()
+  if (rates.size > 10000) for (const [k, rate] of rates) if (rate.end < now) rates.delete(k)
+  const rate = rates.get(key) || { count: 0, end: now + 60000 }
+  if (rate.end < now) { rate.count = 0; rate.end = now + 60000 }
+  rates.set(key, rate)
+  if (++rate.count > 120) return res.status(429).set('Retry-After', '60').json({ error: 'RATE_LIMITED' })
+  const ctx = context(req.user, req.mcpToken)
+  const server = new Server({ name: 'ewo-wiki', version: '1.0.0' }, { capabilities: { tools: {} } })
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }))
+  server.setRequestHandler(CallToolRequestSchema, async request => {
+    const validate = validators.get(request.params.name)
+    const args = request.params.arguments || {}
+    if (!validate || !validate(args)) return { isError: true, content: [{ type: 'text', text: JSON.stringify({ code: 'INVALID_INPUT', message: '请核对工具名称、必填字段和参数类型', requestId: ctx.requestId }) }] }
+    try {
+      const result = await content.dispatch(ctx, request.params.name, args)
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+    } catch (err) {
+      await content.audit(ctx, request.params.name, 'error', args.postId).catch(() => {})
+      return { isError: true, content: [{ type: 'text', text: JSON.stringify({ code: err.publicCode || 'OPERATION_FAILED', message: err.publicCode ? err.message : '操作未完成，请重新读取状态后重试', requestId: ctx.requestId }) }] }
     }
-    case 'wiki_search_posts': {
-      requireScope(req, 'wiki:read')
-      const query = String(args.query || '').trim().toLowerCase()
-      const pages = await WIKI.models.pages.query().where('localeCode', WIKI.config.lang.code).where('isPublished', true).limit(100)
-      return pages.filter(p => WIKI.auth.checkAccess(req.user, ['read:pages'], { path: p.path, locale: p.localeCode })).filter(p => `${p.title} ${p.description}`.toLowerCase().includes(query) && (!args.project || p.path.includes(`/projects/${slugify(args.project)}/`))).map(publicPage)
-    }
-    case 'wiki_get_post':
-      requireScope(req, 'wiki:read')
-      return publicPage(await findVisiblePage(req, args.postId))
-    case 'wiki_create_post': {
-      requireScope(req, 'wiki:create')
-      if (args.visibility === 'public' && args.publish) throw error(-32003, 'public 内容需要人工确认后发布')
-      if (args.visibility === 'team' && args.publish) requireScope(req, 'wiki:publish:team')
-      const pathValue = pagePath(args)
-      const duplicate = await WIKI.models.pages.query().findOne({ path: pathValue, localeCode: WIKI.config.lang.code })
-      if (duplicate) {
-        const existingExtra = readExtra(duplicate)
-        if (duplicate.creatorId === req.user.id && existingExtra.idempotencyKey === args.idempotencyKey) return publicPage(duplicate)
-        throw error(-32009, '相同路径已有内容，请更换标题或先读取已有页面')
-      }
-      const page = await WIKI.models.pages.createPage({ path: pathValue, title: args.title.trim(), content: args.content, description: '', editor: 'markdown', isPublished: args.visibility === 'team' && args.publish === true, isPrivate: false, locale: WIKI.config.lang.code, tags: args.tags || [], user: req.user, extra: JSON.stringify({ visibility: args.visibility, project: args.project || null, idempotencyKey: args.idempotencyKey }) })
-      return publicPage(page)
-    }
-    case 'wiki_update_post': {
-      requireScope(req, 'wiki:update')
-      const page = await findVisiblePage(req, args.postId, true)
-      if (page.updatedAt !== args.expectedRevision) throw error(-32009, '版本冲突，请先重新读取页面')
-      const extra = readExtra(page)
-      if (args.publish === true && extra.visibility === 'public') requireScope(req, 'wiki:publish:public')
-      if (args.publish === true && extra.visibility !== 'public') requireScope(req, 'wiki:publish:team')
-      const updated = await WIKI.models.pages.updatePage({ id: page.id, title: args.title === undefined ? page.title : args.title.trim(), content: args.content === undefined ? page.content : args.content, description: page.description || '', editor: page.editorKey, isPublished: args.publish === undefined ? page.isPublished : args.publish, isPrivate: page.isPrivate, locale: page.localeCode, path: page.path, tags: args.tags || (page.tags || []).map(t => t.tag), user: req.user })
-      return publicPage(updated)
-    }
-    case 'wiki_publish_post': {
-      requireScope(req, 'wiki:update')
-      const page = await findVisiblePage(req, args.postId, true)
-      if (page.updatedAt !== args.expectedRevision) throw error(-32009, '版本冲突，请先重新读取页面')
-      const extra = readExtra(page)
-      requireScope(req, extra.visibility === 'public' ? 'wiki:publish:public' : 'wiki:publish:team')
-      return publicPage(await WIKI.models.pages.updatePage({ id: page.id, title: page.title, content: page.content, description: page.description || '', editor: page.editorKey, isPublished: true, isPrivate: page.isPrivate, locale: page.localeCode, path: page.path, tags: (page.tags || []).map(t => t.tag), user: req.user }))
-    }
-    case 'wiki_upload_attachment': {
-      requireScope(req, 'wiki:upload')
-      const post = await findVisiblePage(req, args.postId, true)
-      if (!/^[a-z0-9][a-z0-9._-]{0,159}$/i.test(args.filename)) throw error(-32602, '文件名不合法')
-      const bytes = Buffer.from(args.dataBase64, 'base64')
-      if (bytes.length > 5 * 1024 * 1024 || crypto.createHash('sha256').update(bytes).digest('hex') !== args.sha256) throw error(-32602, '文件大小或 SHA256 校验失败')
-      const visibility = readExtra(post).visibility === 'public' ? 'public' : 'team'
-      const rootFolder = await WIKI.models.assetFolders.query().findOne({ parentId: null, slug: visibility }) || await WIKI.models.assetFolders.query().insert({ parentId: null, slug: visibility, name: visibility })
-      const attachmentFolder = await WIKI.models.assetFolders.query().findOne({ parentId: rootFolder.id, slug: 'attachments' }) || await WIKI.models.assetFolders.query().insert({ parentId: rootFolder.id, slug: 'attachments', name: 'attachments' })
-      const postFolder = await WIKI.models.assetFolders.query().findOne({ parentId: attachmentFolder.id, slug: String(post.id) }) || await WIKI.models.assetFolders.query().insert({ parentId: attachmentFolder.id, slug: String(post.id), name: String(post.id) })
-      const assetPath = `${visibility}/attachments/${post.id}/${args.filename}`
-      if (!WIKI.auth.checkAccess(req.user, ['write:assets'], { path: assetPath, locale: post.localeCode })) throw error(-32003, '无权上传到此页面')
-      const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'wiki-mcp-'))
-      const file = path.join(temp, args.filename)
-      await fs.writeFile(file, bytes, { mode: 0o600 })
-      const asset = await WIKI.models.assets.upload({ path: file, originalname: args.filename, mimetype: args.mime, size: bytes.length, folderId: postFolder.id, assetPath, mode: 'upload', user: req.user, skipStorage: false })
-      await fs.remove(temp)
-      return { assetId: asset && asset.id, filename: args.filename, url: `/${assetPath}`, sha256: args.sha256 }
-    }
-    default: throw error(-32601, `未知工具 ${name}`)
-  }
-}
-
-router.use(express.json({ limit: '8mb' }))
-router.all('/mcp', async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).set('Allow', 'POST').end()
-  if (!req.mcpToken) return res.status(401).set('WWW-Authenticate', 'Bearer realm="ewo-wiki-mcp"').json({ jsonrpc: '2.0', error: { code: -32001, message: '需要 MCP Token' } })
-  const body = req.body || {}
-  const requestId = req.get('x-request-id') || `mcp_${crypto.randomBytes(12).toString('hex')}`
-  try {
-    if (body.method === 'initialize') return res.json({ jsonrpc: '2.0', id: body.id, result: { protocolVersion: body.params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'ewo-wiki-mcp', version: '1.0.0' } } })
-    if (body.method === 'notifications/initialized') return res.status(202).end()
-    if (body.method === 'tools/list') return res.json({ jsonrpc: '2.0', id: body.id, result: { tools } })
-    if (body.method === 'tools/call') {
-      const toolName = body.params?.name
-      const result = await dispatch(req, toolName, body.params?.arguments || {})
-      await WIKI.models.mcpAuditEvents.query().insert({ requestId, userId: req.user?.id || null, tokenId: req.mcpToken?.id || null, tool: toolName, status: 'success', targetId: result?.id || result?.postId || null, metadata: { method: body.method }, createdAt: new Date().toISOString() })
-      return res.json({ jsonrpc: '2.0', id: body.id, result: { content: [{ type: 'text', text: JSON.stringify(result) }] } })
-    }
-    return res.status(400).json({ jsonrpc: '2.0', id: body.id, error: { code: -32601, message: 'Unsupported method' } })
-  } catch (err) {
-    if (body.method === 'tools/call') {
-      try { await WIKI.models.mcpAuditEvents.query().insert({ requestId, userId: req.user?.id || null, tokenId: req.mcpToken?.id || null, tool: body.params?.name || 'unknown', status: 'error', targetId: body.params?.arguments?.postId || null, metadata: { message: err.message }, createdAt: new Date().toISOString() }) } catch (auditErr) { WIKI.logger.warn(auditErr) }
-    }
-    const e = err.code ? err : error(-32000, err.message || 'MCP request failed')
-    return res.json({ jsonrpc: '2.0', id: body.id, error: e })
-  }
+  })
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true })
+  res.on('close', () => { transport.close(); server.close() })
+  try { await server.connect(transport); await transport.handleRequest(req, res, req.body) } catch (err) { next(err) }
 })
-
+router.get(['/home', '/zh/home', '/en/home'], async (req, res, next) => {
+  try {
+    const args = { query: typeof req.query.q === 'string' ? req.query.q.slice(0, 200) : '', limit: 30, afterId: Math.max(0, parseInt(req.query.after, 10) || 0) }
+    if (req.query.project) args.project = String(req.query.project).slice(0, 80)
+    if (req.query.tag) args.tags = [String(req.query.tag).slice(0, 50)]
+    const result = await content.dispatch({ user: req.user, scopes: ['wiki:read'] }, 'wiki_search_posts', args)
+    const cards = result.posts.map(post => `<article><h2><a href="${escape(post.url)}">${escape(post.title)}</a></h2><small>${post.visibility === 'team' ? '团队内' : '可公开'} · ${post.status === 'draft' ? '草稿' : '已发布'}${post.project ? ' · 项目：<a href="/home?project=' + encodeURIComponent(post.project) + '">' + escape(post.project) + '</a>' : ''}</small><p>${post.tags.map(tag => '<a href="/home?tag=' + encodeURIComponent(tag) + '">#' + escape(tag) + '</a>').join('　')}</p>${post.reviewUrl && post.status === 'draft' ? `<a href="${escape(post.reviewUrl)}">预览并确认公开</a>` : ''}</article>`).join('')
+    res.set('Cache-Control', 'private, no-store').type('html').send(html('全部内容', `<h1>团队知识与项目动态</h1><p class="muted">内容平铺展示，按项目和标签查找。</p><form><input name="q" placeholder="搜索内容" value="${escape(args.query)}"><button>搜索</button></form>${cards || '<p>暂无可见内容。成员可以通过 MCP 发布第一篇 Post。</p>'}${result.nextAfterId ? `<a href="/home?${new URLSearchParams({ ...req.query, after: result.nextAfterId })}">继续浏览</a>` : ''}`))
+  } catch (err) { next(err) }
+})
+router.get('/mcp-audit', async (req, res) => {
+  try {
+    const user = await policy.browserMember(req)
+    const query = WIKI.models.mcpAuditEvents.query().orderBy('id', 'desc').limit(100)
+    if (!user.permissions.includes('manage:system')) query.where('userId', user.id)
+    const rows = await query
+    res.set('Cache-Control', 'no-store').type('html').send(html('AI 操作记录', '<h1>AI 操作记录</h1><p>最近 100 条记录；不记录 Key 明文或文章正文。</p>' + rows.map(row => `<article><b>${escape(row.tool)}</b> · ${escape(row.status)}<p>成员 ${row.userId} · Key ${row.tokenId || '网页'} · 内容 ${row.targetId || '—'}</p><small>${escape(row.createdAt)} · ${escape(row.requestId)}</small></article>`).join('')))
+  } catch (err) { uiError(res, err) }
+})
+router.get('/mcp-review/:id', async (req, res) => {
+  try {
+    const user = await policy.browserMember(req)
+    const page = await content.get({ user }, Number(req.params.id), true)
+    if (policy.visibility(page) !== 'public') throw policy.fail('INVALID_INPUT', '这篇内容不需要公开确认')
+    const attachments = await WIKI.models.knex('mcpAttachments').where('pageId', page.id)
+    const attachmentList = attachments.map(a => `<li><a href="/mcp-assets/${page.id}/${a.assetId}/${encodeURIComponent(a.filename)}">${escape(a.filename)}</a> · ${escape(a.mime)}<br><code>${escape(a.sha256)}</code></li>`).join('')
+    const proof = { id: page.id, revision: page.updatedAt, nonce: crypto.randomBytes(32).toString('hex'), expires: Date.now() + 600000 }
+    req.session.mcpReview = proof
+    res.set('Cache-Control', 'no-store').type('html').send(html('确认公开内容', `<h1>确认公开：${escape(page.title)}</h1><p>确认后，任何人都可以阅读这篇内容及关联附件。本次确认仅适用于当前版本。</p><pre>${escape(page.content)}</pre><h2>关联附件</h2><ul>${attachmentList || '<li>无附件</li>'}</ul><p>标签：${escape((page.tags || []).map(x => x.tag).join('、'))}</p><form method="post"><input type="hidden" name="nonce" value="${proof.nonce}"><label><input type="checkbox" name="confirmed" value="yes" required> 我已检查此版本，确认可以对外公开</label><button>确认并公开此版本</button></form>`))
+  } catch (err) { uiError(res, err) }
+})
+router.post('/mcp-review/:id', async (req, res) => {
+  try {
+    const user = await policy.browserMember(req)
+    const proof = req.session.mcpReview
+    if (!proof || proof.id !== Number(req.params.id) || proof.expires < Date.now() || req.body.nonce !== proof.nonce || req.body.confirmed !== 'yes') throw policy.fail('FORBIDDEN', '确认已过期，请重新打开预览')
+    const result = await content.update({ user, scopes: policy.SCOPES, requestId: crypto.randomUUID() }, { postId: proof.id, expectedRevision: proof.revision }, true, true)
+    req.session.mcpReview = null
+    res.redirect(303, result.url)
+  } catch (err) { uiError(res, err) }
+})
+router.get('/mcp-assets/:pageId/:assetId/:filename', async (req, res) => {
+  try {
+    const page = await content.get({ user: req.user }, Number(req.params.pageId))
+    const link = await WIKI.models.knex('mcpAttachments').where({ pageId: page.id, assetId: Number(req.params.assetId) }).first()
+    if (!link || link.filename !== req.params.filename) return res.sendStatus(404)
+    const bytes = await WIKI.models.knex('assetData').where({ id: link.assetId }).first()
+    if (!bytes) return res.sendStatus(404)
+    res.set('Cache-Control', 'private, no-store').set('X-Content-Type-Options', 'nosniff')
+    if (!link.mime.startsWith('image/')) res.attachment(link.filename)
+    res.type(link.mime).send(bytes.data)
+  } catch { res.sendStatus(404) }
+})
 module.exports = router

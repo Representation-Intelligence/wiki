@@ -111,17 +111,18 @@ module.exports = {
    * @param {Express Next Callback} next
    */
   authenticate (req, res, next) {
+    const bearer = (req.get('authorization') || '').match(/^Bearer (ewt_[^ ]+)$/i)
+    if (bearer) {
+      if (req.path !== '/mcp') return res.status(403).json({ error: 'MCP_KEY_ENDPOINT_ONLY' })
+      return WIKI.models.personalTokens.authenticate(bearer[1]).then(identity => {
+        if (!identity) return res.status(401).set('WWW-Authenticate', 'Bearer realm="ewo-wiki-mcp"').json({ error: 'INVALID_MCP_KEY' })
+        req.user = identity.user
+        req.mcpToken = identity.row
+        next()
+      }).catch(next)
+    }
     WIKI.auth.passport.authenticate('jwt', {session: false}, async (err, user, info) => {
-      if (err) {
-        const authHeader = req.get('authorization') || ''
-        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null
-        const personalToken = await WIKI.models.personalTokens.authenticate(token)
-        if (personalToken) {
-          req.user = personalToken.user
-          req.mcpToken = personalToken.row
-        }
-        return next()
-      }
+      if (err) { return next(err) }
       let mustRevalidate = false
 
       // Expired but still valid within N days, just renew
@@ -177,13 +178,6 @@ module.exports = {
 
       // JWT is NOT valid, set as guest
       if (!user) {
-        const bearer = securityHelper.extractJWT(req)
-        const personalToken = await WIKI.models.personalTokens.authenticate(bearer)
-        if (personalToken) {
-          req.user = personalToken.user
-          req.mcpToken = personalToken.row
-          return next()
-        }
         if (WIKI.auth.guest.cacheExpiration <= DateTime.utc()) {
           WIKI.auth.guest = await WIKI.models.users.getGuestUser()
           WIKI.auth.guest.cacheExpiration = DateTime.utc().plus({ minutes: 1 })
