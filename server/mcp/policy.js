@@ -19,7 +19,7 @@ async function member (id) {
 async function browserMember (req, mutation = false) {
   const cookie = req.cookies && req.cookies.jwt
   const payload = cookie && jwt.decode(cookie)
-  if (!req.user || req.mcpToken || req.get('authorization') || !payload || payload.api || payload.id !== req.user.id) throw fail('UNAUTHORIZED', '请使用 Wiki 网页登录管理连接')
+  if (!req.user || req.mcpToken || !payload || payload.api || payload.id !== req.user.id) throw fail('UNAUTHORIZED', '请使用 Wiki 网页登录管理连接')
   const origin = req.get('origin')
   if (origin && origin !== new URL(WIKI.config.host).origin) throw fail('FORBIDDEN', '来源不受信任')
   if (mutation && req.get('x-ewo-mcp-ui') !== '1') throw fail('FORBIDDEN', '缺少网页操作标识')
