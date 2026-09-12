@@ -56,13 +56,7 @@ function readExtra (page) {
 
 function publicPage (page) {
   const extra = readExtra(page)
-  return { id: page.id, path: page.path.replace(/^(public|team)\//, ''), title: page.title, description: page.description, content: page.content, tags: (page.tags || []).map(t => t.tag || t), visibility: extra.visibility || (page.path.startsWith('public/') ? 'public' : 'team'), project: extra.project || null, isPublished: page.isPublished, revision: page.updatedAt, authorId: page.authorId, creatorId: page.creatorId }
-}
-
-async function getPage (id) {
-  const page = await WIKI.models.pages.getPageFromDb(id)
-  if (!page || !WIKI.auth.checkAccess({ ...WIKI.auth.guest, permissions: [] }, ['read:pages'], { path: page.path, locale: page.localeCode })) return page
-  return page
+  return { id: page.id, path: page.path.replace(/^(public|team)\//, ''), url: `/${page.path}`, title: page.title, description: page.description, content: page.content, tags: (page.tags || []).map(t => t.tag || t), visibility: extra.visibility || (page.path.startsWith('public/') ? 'public' : 'team'), project: extra.project || null, isPublished: page.isPublished, revision: page.updatedAt, authorId: page.authorId, creatorId: page.creatorId }
 }
 
 async function findVisiblePage (req, id, writable = false) {
@@ -128,16 +122,22 @@ async function dispatch (req, name, args) {
     }
     case 'wiki_upload_attachment': {
       requireScope(req, 'wiki:upload')
-      await findVisiblePage(req, args.postId, true)
+      const post = await findVisiblePage(req, args.postId, true)
       if (!/^[a-z0-9][a-z0-9._-]{0,159}$/i.test(args.filename)) throw error(-32602, '文件名不合法')
       const bytes = Buffer.from(args.dataBase64, 'base64')
       if (bytes.length > 5 * 1024 * 1024 || crypto.createHash('sha256').update(bytes).digest('hex') !== args.sha256) throw error(-32602, '文件大小或 SHA256 校验失败')
+      const visibility = readExtra(post).visibility === 'public' ? 'public' : 'team'
+      const rootFolder = await WIKI.models.assetFolders.query().findOne({ parentId: null, slug: visibility }) || await WIKI.models.assetFolders.query().insert({ parentId: null, slug: visibility, name: visibility })
+      const attachmentFolder = await WIKI.models.assetFolders.query().findOne({ parentId: rootFolder.id, slug: 'attachments' }) || await WIKI.models.assetFolders.query().insert({ parentId: rootFolder.id, slug: 'attachments', name: 'attachments' })
+      const postFolder = await WIKI.models.assetFolders.query().findOne({ parentId: attachmentFolder.id, slug: String(post.id) }) || await WIKI.models.assetFolders.query().insert({ parentId: attachmentFolder.id, slug: String(post.id), name: String(post.id) })
+      const assetPath = `${visibility}/attachments/${post.id}/${args.filename}`
+      if (!WIKI.auth.checkAccess(req.user, ['write:assets'], { path: assetPath, locale: post.localeCode })) throw error(-32003, '无权上传到此页面')
       const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'wiki-mcp-'))
       const file = path.join(temp, args.filename)
       await fs.writeFile(file, bytes, { mode: 0o600 })
-      const asset = await WIKI.models.assets.upload({ path: file, originalname: args.filename, mimetype: args.mime, size: bytes.length, folderId: null, assetPath: args.filename, mode: 'upload', user: req.user, skipStorage: false })
+      const asset = await WIKI.models.assets.upload({ path: file, originalname: args.filename, mimetype: args.mime, size: bytes.length, folderId: postFolder.id, assetPath, mode: 'upload', user: req.user, skipStorage: false })
       await fs.remove(temp)
-      return { assetId: asset && asset.id, filename: args.filename, url: `/${args.filename}`, sha256: args.sha256 }
+      return { assetId: asset && asset.id, filename: args.filename, url: `/${assetPath}`, sha256: args.sha256 }
     }
     default: throw error(-32601, `未知工具 ${name}`)
   }
